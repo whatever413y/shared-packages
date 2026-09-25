@@ -1,0 +1,10 @@
+{
+  "consumption": 50,
+  "created_at": "2026-09-25T07:48:58.916148",
+  "curr_reading": 150,
+  "id": 1,
+  "prev_reading": 100,
+  "room_id": 1,
+  "tenant_id": 1,
+  "updated_at": "2026-09-25T07:48:58.916148"
+}
