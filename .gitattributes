@@ -1,0 +1,2 @@
+# Dart tooling and CI (Linux) expect LF; keep it on every checkout.
+* text=auto eol=lf

@@ -1,0 +1,27 @@
+name: m18_shared
+
+on:
+  push:
+    branches: [main]
+    paths: ['packages/m18_shared/**', '.github/workflows/m18_shared.yml']
+  pull_request:
+    paths: ['packages/m18_shared/**', '.github/workflows/m18_shared.yml']
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/m18_shared
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable # always the latest stable Flutter
+          cache: true
+      - run: flutter --version
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
