@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Real responses from the server (synthetic data; tokens and signed URLs replaced), exported by the

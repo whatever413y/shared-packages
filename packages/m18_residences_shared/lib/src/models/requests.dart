@@ -80,6 +80,6 @@ class BillRequest {
     'room_charges': '$roomCharges',
     'electric_charges': '$electricCharges',
     'additional_charges': jsonEncode(additionalCharges.map((c) => c.toJson()).toList()),
-    'receipt_url': receiptUrl ?? '',
+    'receipt_url': ?receiptUrl,
   };
 }

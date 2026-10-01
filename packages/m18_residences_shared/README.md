@@ -1,4 +1,4 @@
-# m18_shared
+# m18_residences_shared
 
 Shared code for the two M18 Residences Flutter web apps (admin: `M18-Residences-Admin`, tenant: `M18-Residences`):
 
@@ -16,19 +16,19 @@ For browser e2e builds, pass `--dart-define=E2E=true` in the app and give widget
 
 ```yaml
 dependencies:
-  m18_shared:
+  m18_residences_shared:
     git:
       url: https://github.com/whatever413y/shared-packages.git
-      path: packages/m18_shared
-      ref: m18_shared-v0.1.0
+      path: packages/m18_residences_shared
+      ref: m18_residences_shared-v0.2.0
 ```
 
 For local work next to a checkout of this repo, add a gitignored `pubspec_overrides.yaml` to the app:
 
 ```yaml
 dependency_overrides:
-  m18_shared:
-    path: ../shared-packages/packages/m18_shared
+  m18_residences_shared:
+    path: ../shared-packages/packages/m18_residences_shared
 ```
 
 ## Development

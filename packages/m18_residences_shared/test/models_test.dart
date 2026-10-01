@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 Map<String, dynamic> billJson({Map<String, dynamic>? reading, Object? receiptUrl}) => {
   'bill': {
@@ -139,7 +139,6 @@ void main() {
         'room_charges': '5000',
         'electric_charges': '850',
         'additional_charges': '[{"amount":200,"description":"Water"}]',
-        'receipt_url': '',
       });
     });
   });

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:m18_shared/m18_shared.dart';
+import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 Widget app(Widget home, {void Function(BuildContext)? onLogout}) {
   final material = MaterialApp(theme: AppTheme.lightTheme, home: home);

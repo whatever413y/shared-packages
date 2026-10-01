@@ -1,6 +1,6 @@
-name: m18_shared
+name: m18_residences_shared
 description: "Shared models, API client and widgets for the M18 Residences admin and tenant apps."
-version: 0.1.0
+version: 0.2.0
 publish_to: 'none'
 
 environment:
