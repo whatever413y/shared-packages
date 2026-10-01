@@ -2,7 +2,7 @@ name: m18_residences_shared
 
 on:
   push:
-    branches: [main]
+    branches: [main, development]
     paths: ['packages/m18_residences_shared/**', '.github/workflows/m18_residences_shared.yml']
   pull_request:
     paths: ['packages/m18_residences_shared/**', '.github/workflows/m18_residences_shared.yml']
