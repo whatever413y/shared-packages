@@ -1,6 +1,6 @@
 # m18_residences_shared
 
-Shared code for the two M18 Residences Flutter web apps (admin: `M18-Residences-Admin`, tenant: `M18-Residences`):
+Shared code for the two M18 Residences Flutter web apps (admin: `m18-residences-admin`, tenant: `m18-residences-tenant`):
 
 - **Models** that mirror the API's JSON (`Room`, `Tenant`, `Reading`, `Bill`, `AdditionalCharge`) and request bodies (`RoomRequest`, `TenantRequest`, `ReadingRequest`, `BillRequest`).
 - **API layer**: `ApiClient` + `AuthApi`, `BillApi`, `RoomApi`, `TenantApi`, `ReadingApi`. Unexpected statuses throw `ApiException`; admin login 401 → `InvalidCredentialsException`, tenant login 404 → `TenantNotFoundException`, "no bill" 404 → `null`.
