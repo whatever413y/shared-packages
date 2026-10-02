@@ -15,6 +15,7 @@ export 'src/models/bill.dart';
 export 'src/models/reading.dart';
 export 'src/models/requests.dart';
 export 'src/models/room.dart';
+export 'src/models/signed_file.dart';
 export 'src/models/tenant.dart';
 export 'src/widgets/app_theme.dart';
 export 'src/widgets/custom_app_bar.dart';

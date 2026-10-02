@@ -177,14 +177,14 @@ void main() {
   });
 
   group('ReceiptLink', () {
-    Future<String> neverCalled(String _, String _) => throw StateError('should not fetch');
+    Future<SignedFile> neverCalled(String _, String _) => throw StateError('should not fetch');
 
     testWidgets('renders nothing without a receipt (null or empty URL) or tenant name', (tester) async {
       for (final (name, url) in [('ANA', null), ('ANA', ''), (null, '1727000000-r3')]) {
         await tester.pumpWidget(
           app(
             Scaffold(
-              body: ReceiptLink(tenantName: name, receiptUrl: url, fetchSignedUrl: neverCalled),
+              body: ReceiptLink(tenantName: name, receiptUrl: url, fetchSignedFile: neverCalled),
             ),
           ),
         );
@@ -194,14 +194,14 @@ void main() {
 
     testWidgets('shows the file name and opens a dialog with the fetch error', (tester) async {
       final requested = <(String, String)>[];
-      final completer = Completer<String>();
+      final completer = Completer<SignedFile>();
       await tester.pumpWidget(
         app(
           Scaffold(
             body: ReceiptLink(
               tenantName: 'ANA',
               receiptUrl: '1727000000-r3',
-              fetchSignedUrl: (name, file) {
+              fetchSignedFile: (name, file) {
                 requested.add((name, file));
                 return completer.future;
               },
@@ -229,7 +229,7 @@ void main() {
           builder: (context) => TextButton(
             onPressed: () => SignedImageDialog.show(
               context,
-              fetchUrl: () async {
+              fetchFile: () async {
                 calls++;
                 throw const ApiException(500, 'down');
               },
@@ -247,5 +247,33 @@ void main() {
 
     expect(calls, 1);
     expect(find.text('Error loading image: down'), findsOneWidget);
+  });
+
+  testWidgets('SignedImageDialog offers PDFs in a new tab instead of showing them', (tester) async {
+    final opened = <String>[];
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => SignedImageDialog.show(
+              context,
+              subject: 'receipt',
+              fetchFile: () async => const SignedFile(url: 'https://api.test/api/files/r.pdf', contentType: 'application/pdf'),
+              openUrl: opened.add,
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('This receipt is a PDF.'), findsOneWidget);
+    expect(find.byType(Image), findsNothing);
+    expect(opened, isEmpty, reason: 'only a tap opens the tab');
+
+    await tester.tap(find.text('Open PDF'));
+    expect(opened, ['https://api.test/api/files/r.pdf']);
   });
 }

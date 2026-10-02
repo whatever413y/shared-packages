@@ -74,7 +74,8 @@ void main() {
     });
 
     test('signed URL', () async {
-      expect(await AuthApi(serving('signed_url.json')).signedPaymentUrl('gcash'), '<signed-url>');
+      final file = await AuthApi(serving('signed_url.json')).signedPaymentUrl('gcash');
+      expect((file.url, file.contentType), ('<signed-url>', 'image/png'));
     });
   });
 }

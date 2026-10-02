@@ -31,14 +31,12 @@ class BillApi {
   Future<Bill> update(int id, BillRequest request) async =>
       Bill.fromJson(await _client.put('/bills/$id', body: request.toJson()) as Map<String, dynamic>);
 
-  /// Updates the bill and attaches a receipt image (`receipt_file`, JPEG or PNG by extension).
-  Future<Bill> uploadReceipt(int id, BillRequest request, {required List<int> bytes, required String filename}) async {
-    final ext = filename.split('.').last.toLowerCase();
-    final mediaType = (ext == 'jpg' || ext == 'jpeg') ? MediaType('image', 'jpeg') : MediaType('image', 'png');
-
+  /// Updates the bill and attaches a receipt (`receipt_file`). [contentType] is the file's MIME type
+  /// (an image or `application/pdf`); the server checks the bytes and refuses other types.
+  Future<Bill> uploadReceipt(int id, BillRequest request, {required List<int> bytes, required String filename, required String contentType}) async {
     final multipart = http.MultipartRequest('PUT', _client.uri('/bills/$id/upload'))
       ..fields.addAll(request.toMultipartFields())
-      ..files.add(http.MultipartFile.fromBytes('receipt_file', bytes, filename: filename, contentType: mediaType));
+      ..files.add(http.MultipartFile.fromBytes('receipt_file', bytes, filename: filename, contentType: MediaType.parse(contentType)));
 
     return Bill.fromJson(await _client.send(multipart) as Map<String, dynamic>);
   }

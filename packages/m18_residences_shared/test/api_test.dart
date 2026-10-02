@@ -134,14 +134,25 @@ void main() {
       expect(await auth.tokens.subject(), isNull);
     });
 
-    test('signed URLs encode path segments and return the url', () async {
-      final auth = AuthApi(client((_) async => json({'url': 'https://r2.test/signed'}, 200)));
+    test('signed URLs encode path segments and return the link and its type', () async {
+      final auth = AuthApi(client((_) async => json({'url': 'https://api.test/api/files/x', 'content_type': 'application/pdf'}, 200)));
 
-      expect(await auth.signedReceiptUrl('JUAN DELA CRUZ', '1727000000-r3'), 'https://r2.test/signed');
+      final receipt = await auth.signedReceiptUrl('JUAN DELA CRUZ', '1727000000-r3');
+      expect((receipt.url, receipt.contentType, receipt.isPdf), ('https://api.test/api/files/x', 'application/pdf', true));
       expect(sent.last.url.toString(), '$base/signed-urls/receipts/JUAN%20DELA%20CRUZ/1727000000-r3');
 
       await auth.signedPaymentUrl('gcash');
       expect(sent.last.url.toString(), '$base/signed-urls/payments/gcash');
+    });
+
+    test('a signed URL without content_type is not a PDF; without url it throws', () async {
+      var body = <String, dynamic>{'url': 'https://api.test/api/files/x'};
+      final auth = AuthApi(client((_) async => json(body, 200)));
+      final file = await auth.signedPaymentUrl('gcash');
+      expect((file.contentType, file.isPdf), (null, false));
+
+      body = {'content_type': 'image/png'};
+      await expectLater(auth.signedPaymentUrl('gcash'), throwsA(isA<ApiException>()));
     });
   });
 
@@ -173,12 +184,12 @@ void main() {
       await expectLater(bills.create(request), throwsA(isA<ApiException>()));
     });
 
-    test('uploadReceipt sends a multipart PUT with the form fields and a JPEG file part', () async {
+    test('uploadReceipt sends a multipart PUT with the form fields and the given file type', () async {
       SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
       final bills = BillApi(client((_) async => json(billJson, 200)));
       const request = BillRequest(tenantId: 2, readingId: 3, roomCharges: 5000, electricCharges: 850);
 
-      await bills.uploadReceipt(7, request, bytes: [1, 2, 3], filename: 'receipt.JPG');
+      await bills.uploadReceipt(7, request, bytes: [1, 2, 3], filename: 'receipt.webp', contentType: 'image/webp');
 
       final upload = sent.single;
       expect(upload.method, 'PUT');
@@ -187,8 +198,9 @@ void main() {
       expect(upload.headers['content-type'], startsWith('multipart/form-data'));
       final body = latin1.decode(upload.bodyBytes);
       expect(body, contains('name="room_charges"'));
-      expect(body, contains('name="receipt_file"; filename="receipt.JPG"'));
-      expect(body, contains('content-type: image/jpeg'));
+      expect(body, contains('name="receipt_file"; filename="receipt.webp"'));
+      expect(body, contains('content-type: image/webp'));
+      expect(body, isNot(contains('name="receipt_url"')), reason: 'no receipt_url field without a receipt URL');
     });
 
     test('delete expects 204', () async {

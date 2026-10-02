@@ -1,4 +1,5 @@
 import '../models/tenant.dart';
+import '../models/signed_file.dart';
 import 'api_client.dart';
 import 'api_exception.dart';
 import 'token_store.dart';
@@ -82,17 +83,17 @@ class AuthApi {
 
   Future<void> logout() => tokens.clear();
 
-  /// Short-lived URL for a bill receipt stored under `receipts/<tenant name>/<filename>`.
-  Future<String> signedReceiptUrl(String tenantName, String filename) =>
-      _signedUrl('/signed-urls/receipts/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
+  /// Short-lived link to a bill receipt stored under `receipts/<tenant name>/<filename>`.
+  Future<SignedFile> signedReceiptUrl(String tenantName, String filename) =>
+      _signedFile('/signed-urls/receipts/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
 
-  /// Short-lived URL for a payment QR image (`payments/<name>.png`).
-  Future<String> signedPaymentUrl(String name) => _signedUrl('/signed-urls/payments/${Uri.encodeComponent(name)}');
+  /// Short-lived link to a payment QR image (`payments/<name>.png`).
+  Future<SignedFile> signedPaymentUrl(String name) => _signedFile('/signed-urls/payments/${Uri.encodeComponent(name)}');
 
-  Future<String> _signedUrl(String path) async {
-    final data = await _client.get(path);
-    final url = data['url'] as String?;
-    if (url == null || url.isEmpty) throw const ApiException(200, 'Signed URL response is missing url');
-    return url;
+  Future<SignedFile> _signedFile(String path) async {
+    final data = await _client.get(path) as Map<String, dynamic>;
+    final url = data['url'];
+    if (url is! String || url.isEmpty) throw const ApiException(200, 'Signed URL response is missing url');
+    return SignedFile.fromJson(data);
   }
 }
