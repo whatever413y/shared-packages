@@ -14,17 +14,17 @@ dependencies:
     git:
       url: https://github.com/whatever413y/shared-packages.git
       path: packages/m18_residences_shared
-      ref: m18_residences_shared-v0.2.0
+      ref: m18_residences_shared-v0.3.0
 ```
 
 Local development against a sibling checkout: a gitignored `pubspec_overrides.yaml` in the app with `dependency_overrides: {m18_residences_shared: {path: ../shared-packages/packages/m18_residences_shared}}`.
 
 ## Releasing a package
 
-1. Bump `version:` in the package's `pubspec.yaml` and add a `CHANGELOG.md` entry.
-2. Commit, then tag and push the tag: `git tag m18_residences_shared-vX.Y.Z && git push origin m18_residences_shared-vX.Y.Z`.
+1. On `development`: bump `version:` in the package's `pubspec.yaml` and add a `CHANGELOG.md` entry.
+2. Commit, merge to `main`, then tag `main` and push the tag: `git tag m18_residences_shared-vX.Y.Z && git push origin m18_residences_shared-vX.Y.Z`.
 3. Point each consuming app's `ref:` at the new tag.
 
-CI (`.github/workflows/`) runs format, analyze and tests per package on the latest stable Flutter.
+CI (`.github/workflows/`, using `flutter-package-check` from [whatever413y/.github](https://github.com/whatever413y/.github)) runs format, analyze and tests per package on the latest stable Flutter.
 
 This repo is public: never commit secrets, real tokens or production data (test fixtures use synthetic data).

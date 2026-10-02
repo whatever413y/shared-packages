@@ -2,9 +2,9 @@
 
 Shared code for the two M18 Residences Flutter web apps (admin: `m18-residences-admin`, tenant: `m18-residences-tenant`):
 
-- **Models** that mirror the API's JSON (`Room`, `Tenant`, `Reading`, `Bill`, `AdditionalCharge`) and request bodies (`RoomRequest`, `TenantRequest`, `ReadingRequest`, `BillRequest`).
+- **Models** that mirror the API's JSON (`Room`, `Tenant`, `Reading`, `Bill`, `AdditionalCharge`, `SignedFile` = a signed link plus its content type) and request bodies (`RoomRequest`, `TenantRequest`, `ReadingRequest`, `BillRequest`).
 - **API layer**: `ApiClient` + `AuthApi`, `BillApi`, `RoomApi`, `TenantApi`, `ReadingApi`. Unexpected statuses throw `ApiException`; admin login 401 → `InvalidCredentialsException`, tenant login 404 → `TenantNotFoundException`, "no bill" 404 → `null`.
-- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog`, `ReceiptLink`, and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action).
+- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog` (shows an image, or offers to open a PDF in a new tab), `ReceiptLink`, and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action).
 
 ## Configuration
 
@@ -20,7 +20,7 @@ dependencies:
     git:
       url: https://github.com/whatever413y/shared-packages.git
       path: packages/m18_residences_shared
-      ref: m18_residences_shared-v0.2.0
+      ref: m18_residences_shared-v0.3.0
 ```
 
 For local work next to a checkout of this repo, add a gitignored `pubspec_overrides.yaml` to the app:
@@ -40,5 +40,5 @@ flutter analyze
 flutter test
 ```
 
-`test/fixtures/` holds real API responses for the contract tests. Regenerate them from the server repo when the API changes:
+`test/fixtures/` holds API responses (synthetic data) for the contract tests. Regenerate them from the server repo when the API changes:
 `$env:FIXTURES_OUT='<path-to-this-package>/test/fixtures'; cargo test export_contract_fixtures -- --ignored`.
