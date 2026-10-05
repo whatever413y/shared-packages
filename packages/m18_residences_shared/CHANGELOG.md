@@ -1,3 +1,7 @@
+## Unreleased
+
+* Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded), `context.windowSize`, `ResponsiveBuilder`, `ResponsiveCenter` (caps content at 1200 px).
+
 ## 0.3.0
 
 * For the Workers + D1 server. **Breaking:**

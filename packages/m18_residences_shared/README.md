@@ -4,7 +4,7 @@ Shared code for the two M18 Residences Flutter web apps (admin: `m18-residences-
 
 - **Models** that mirror the API's JSON (`Room`, `Tenant`, `Reading`, `Bill`, `AdditionalCharge`, `SignedFile` = a signed link plus its content type) and request bodies (`RoomRequest`, `TenantRequest`, `ReadingRequest`, `BillRequest`).
 - **API layer**: `ApiClient` + `AuthApi`, `BillApi`, `RoomApi`, `TenantApi`, `ReadingApi`. Unexpected statuses throw `ApiException`; admin login 401 → `InvalidCredentialsException`, tenant login 404 → `TenantNotFoundException`, "no bill" 404 → `null`.
-- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog` (shows an image, or offers to open a PDF in a new tab), `ReceiptLink`, and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action).
+- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog` (shows an image, or offers to open a PDF in a new tab), `ReceiptLink`, and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action). Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded) and `context.windowSize`, `ResponsiveBuilder` (picks a layout from the parent's width), `ResponsiveCenter` (caps content at 1200 px).
 
 ## Configuration
 

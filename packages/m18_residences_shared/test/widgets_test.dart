@@ -276,4 +276,60 @@ void main() {
     await tester.tap(find.text('Open PDF'));
     expect(opened, ['https://api.test/api/files/r.pdf']);
   });
+
+  group('responsive', () {
+    test('WindowSize.fromWidth uses the 600 / 1024 breakpoints', () {
+      expect(WindowSize.fromWidth(360), WindowSize.compact);
+      expect(WindowSize.fromWidth(599), WindowSize.compact);
+      expect(WindowSize.fromWidth(600), WindowSize.medium);
+      expect(WindowSize.fromWidth(1023), WindowSize.medium);
+      expect(WindowSize.fromWidth(1024), WindowSize.expanded);
+    });
+
+    Future<void> pumpAt(WidgetTester tester, double width, Widget child) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(app(child));
+    }
+
+    for (final (width, expected) in [(360.0, 'compact'), (800.0, 'medium'), (1440.0, 'expanded')]) {
+      testWidgets('ResponsiveBuilder and context.windowSize pick $expected at $width px', (tester) async {
+        await pumpAt(
+          tester,
+          width,
+          Builder(
+            builder: (context) => Column(
+              children: [
+                Text('window: ${context.windowSize.name}'),
+                ResponsiveBuilder(
+                  compact: (_) => const Text('compact'),
+                  medium: (_) => const Text('medium'),
+                  expanded: (_) => const Text('expanded'),
+                ),
+              ],
+            ),
+          ),
+        );
+        expect(find.text('window: $expected'), findsOneWidget);
+        expect(find.text(expected), findsOneWidget);
+      });
+    }
+
+    testWidgets('ResponsiveBuilder falls back expanded -> medium -> compact', (tester) async {
+      await pumpAt(tester, 1440, ResponsiveBuilder(compact: (_) => const Text('compact')));
+      expect(find.text('compact'), findsOneWidget);
+    });
+
+    testWidgets('ResponsiveCenter caps the content width', (tester) async {
+      await pumpAt(
+        tester,
+        1440,
+        const ResponsiveCenter(
+          child: SizedBox(key: Key('content'), width: double.infinity, height: 10),
+        ),
+      );
+      expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.maxContentWidth);
+    });
+  });
 }

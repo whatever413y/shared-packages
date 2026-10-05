@@ -25,4 +25,5 @@ export 'src/widgets/error_view.dart';
 export 'src/widgets/loading_overlay.dart';
 export 'src/widgets/logout_scope.dart';
 export 'src/widgets/receipt_link.dart';
+export 'src/widgets/responsive.dart';
 export 'src/widgets/signed_image_dialog.dart';
