@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'selectable.dart';
+
 class AppColors {
   static const Color primaryBlue = Color(0xFF0D47A1);
   static const Color secondaryBlue = Color(0xFF42A5F5);
@@ -15,6 +17,10 @@ class AppTheme {
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.lightBackground,
       fontFamily: 'Roboto',
+      // Every page's text can be selected and copied.
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {for (final platform in TargetPlatform.values) platform: const SelectablePageTransitionsBuilder()},
+      ),
 
       iconTheme: const IconThemeData(color: AppColors.primaryBlue),
 

@@ -28,6 +28,6 @@ export 'src/widgets/loading_overlay.dart';
 export 'src/widgets/logout_scope.dart';
 export 'src/widgets/receipt_link.dart';
 export 'src/widgets/responsive.dart';
-export 'src/widgets/selectable_app.dart';
+export 'src/widgets/selectable.dart';
 export 'src/widgets/signed_image_dialog.dart';
 export 'src/web/save_file.dart' show saveSignedFile;

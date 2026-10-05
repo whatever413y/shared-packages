@@ -4,7 +4,7 @@ Shared code for the two M18 Residences Flutter web apps (admin: `m18-residences-
 
 - **Models** that mirror the API's JSON (`Room`, `Tenant`, `Reading`, `Bill`, `AdditionalCharge`, `SignedFile` = a signed link plus its content type, `PaymentImage`) and request bodies (`RoomRequest`, `TenantRequest`, `ReadingRequest`, `BillRequest`).
 - **API layer**: `ApiClient` + `AuthApi`, `BillApi`, `RoomApi`, `TenantApi`, `ReadingApi`, `PaymentApi` (admin: list and replace the payment QR images). Unexpected statuses throw `ApiException`; admin login 401 → `InvalidCredentialsException`, tenant login 404 → `TenantNotFoundException`, "no bill" 404 → `null`.
-- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog` (shows an image, or offers to open a PDF in a new tab; Save downloads it, WebP/AVIF/GIF as JPEG; Open in new tab; Close), `ReceiptLink` (`showFullName` shows the whole storage key), `SelectableApp` (`MaterialApp.builder`: every text selectable and copyable, dialogs included), and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action). Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded) and `context.windowSize`, `ResponsiveBuilder` (picks a layout from the parent's width), `ResponsiveCenter` (caps content at 1200 px).
+- **Widgets**: `AppTheme`, `LoadingOverlay`, `CustomTextFormField`, `CustomDropdownForm`, `CustomAppBar`, `ErrorView`, `SignedImageDialog` (shows an image, or offers to open a PDF in a new tab; Save downloads it, WebP/AVIF/GIF as JPEG; Open in new tab; Close), `ReceiptLink` (`showFullName` shows the whole storage key), `showSelectableDialog` (a dialog whose text can be selected; pages get the same from `AppTheme`'s `SelectablePageTransitionsBuilder`), and `LogoutScope` (wrap `MaterialApp` in it to give the app bar/error view the app's logout action). Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded) and `context.windowSize`, `ResponsiveBuilder` (picks a layout from the parent's width), `ResponsiveCenter` (caps content at 1200 px).
 
 Server timestamps are UTC without a zone; `Bill.createdAt` and `Reading.createdAt` are parsed as UTC and returned in
 local time.
@@ -23,7 +23,7 @@ dependencies:
     git:
       url: https://github.com/whatever413y/shared-packages.git
       path: packages/m18_residences_shared
-      ref: m18_residences_shared-v0.4.0
+      ref: m18_residences_shared-v0.5.0
 ```
 
 For local work next to a checkout of this repo, add a gitignored `pubspec_overrides.yaml` to the app:

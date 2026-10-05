@@ -4,6 +4,7 @@ import '../api/api_exception.dart';
 import '../models/signed_file.dart';
 import '../web/open_url.dart';
 import '../web/save_file.dart';
+import 'selectable.dart';
 
 /// Dialog showing a file behind a short-lived signed link; the link is fetched once when the dialog opens.
 /// Images are shown in the dialog; PDFs get an "Open PDF" button that opens them in a new browser tab.
@@ -44,7 +45,7 @@ class SignedImageDialog extends StatefulWidget {
     String? saveName,
     void Function(String url) openUrl = openInNewTab,
     Future<void> Function(SignedFile file, String baseName) saveFile = saveSignedFile,
-  }) => showDialog<void>(
+  }) => showSelectableDialog<void>(
     context: context,
     builder: (_) =>
         SignedImageDialog(fetchFile: fetchFile, subject: subject, fileName: fileName, saveName: saveName, openUrl: openUrl, saveFile: saveFile),

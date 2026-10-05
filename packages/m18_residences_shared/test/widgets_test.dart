@@ -354,28 +354,43 @@ void main() {
     expect(save().onPressed, isNull);
   });
 
-  testWidgets('SelectableApp makes text selectable in pages and dialogs', (tester) async {
+  testWidgets('pages and dialogs each get their own selection area', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        builder: (context, child) => SelectableApp(child: child!),
+        theme: AppTheme.lightTheme,
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
-              onPressed: () => showDialog<void>(
-                context: context,
-                builder: (_) => const AlertDialog(content: Text('Account 1234')),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () => showSelectableDialog<void>(
+                        context: context,
+                        builder: (_) => const AlertDialog(content: Text('Account 1234')),
+                      ),
+                      child: const Text('open dialog'),
+                    ),
+                  ),
+                ),
               ),
-              child: const Text('open'),
+              child: const Text('open page'),
             ),
           ),
         ),
       ),
     );
-    expect(find.byType(SelectionArea), findsOneWidget);
+    expect(find.byType(SelectionArea), findsOneWidget, reason: 'the first page');
 
-    await tester.tap(find.text('open'));
+    await tester.tap(find.text('open page'));
     await tester.pumpAndSettle();
-    // Long press selects a word and shows the handles and menu, which need the Overlay.
+    await tester.tap(find.text('open dialog'));
+    await tester.pumpAndSettle();
+    // The dialog's text belongs to the dialog's own area, not to one shared with the hidden pages below.
+    final dialogArea = find.ancestor(of: find.text('Account 1234'), matching: find.byType(SelectionArea));
+    expect(dialogArea, findsOneWidget);
+    expect(find.descendant(of: dialogArea, matching: find.text('open page', skipOffstage: false)), findsNothing);
+
     await tester.longPress(find.text('Account 1234'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

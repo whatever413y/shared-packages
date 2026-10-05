@@ -1,3 +1,7 @@
+## 0.5.0
+
+* **Breaking:** `SelectableApp` is gone: one selection area around the whole Navigator also picked up the text of the hidden pages underneath, so text in tables and dialogs couldn't be selected. Instead `AppTheme.lightTheme` gives every page its own `SelectionArea` (`SelectablePageTransitionsBuilder`), and `showSelectableDialog` does the same for dialogs (`SignedImageDialog` uses it).
+
 ## 0.4.0
 
 * Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded), `context.windowSize`, `ResponsiveBuilder`, `ResponsiveCenter` (caps content at 1200 px).
