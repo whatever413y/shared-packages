@@ -23,7 +23,7 @@ dependencies:
     git:
       url: https://github.com/whatever413y/shared-packages.git
       path: packages/m18_residences_shared
-      ref: m18_residences_shared-v0.3.0
+      ref: m18_residences_shared-v0.4.0
 ```
 
 For local work next to a checkout of this repo, add a gitignored `pubspec_overrides.yaml` to the app:

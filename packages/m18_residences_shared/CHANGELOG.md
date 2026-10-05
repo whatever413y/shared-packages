@@ -1,4 +1,4 @@
-## Unreleased
+## 0.4.0
 
 * Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded), `context.windowSize`, `ResponsiveBuilder`, `ResponsiveCenter` (caps content at 1200 px).
 * `SignedImageDialog` has a header with the file's name, Save (downloads it; WebP, AVIF and GIF are converted to JPEG in the browser), Open in new tab and Close; new optional `fileName`, `saveName` and `saveFile`. `saveSignedFile` does the download.
