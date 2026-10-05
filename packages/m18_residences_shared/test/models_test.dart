@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
 
-Map<String, dynamic> billJson({Map<String, dynamic>? reading, Object? receiptUrl}) => {
+Map<String, dynamic> billJson({Map<String, dynamic>? reading, Object? receiptUrl, Object? paymentUrl}) => {
   'bill': {
     'id': 7,
     'reading_id': 3,
@@ -10,6 +10,7 @@ Map<String, dynamic> billJson({Map<String, dynamic>? reading, Object? receiptUrl
     'electric_charges': 850,
     'total_amount': 6050,
     'receipt_url': receiptUrl,
+    'payment_url': paymentUrl,
     'paid': false,
     'created_at': '2026-09-25T10:00:00.123456',
     'updated_at': '2026-09-25T10:00:00.123456',
@@ -62,6 +63,23 @@ void main() {
       expect(Bill.fromJson(billJson()).hasReceipt, isFalse);
       expect(Bill.fromJson(billJson(receiptUrl: '')).hasReceipt, isFalse);
       expect(Bill.fromJson(billJson(receiptUrl: '1727000000-r3')).hasReceipt, isTrue);
+    });
+
+    test('hasPayment is false for a null or empty payment URL', () {
+      expect(Bill.fromJson(billJson()).hasPayment, isFalse);
+      expect(Bill.fromJson(billJson(paymentUrl: '')).hasPayment, isFalse);
+      expect(Bill.fromJson(billJson(paymentUrl: '1727000000-r3')).paymentUrl, '1727000000-r3');
+      // Bills from a server without the column have none.
+      final old = billJson()..['bill'].remove('payment_url');
+      expect(Bill.fromJson(old).hasPayment, isFalse);
+    });
+
+    test('status: a receipt means paid, a payment image alone means for verification', () {
+      expect(Bill.fromJson(billJson()).status, BillStatus.unpaid);
+      expect(Bill.fromJson(billJson(paymentUrl: '1-r3')).status, BillStatus.forVerification);
+      expect(Bill.fromJson(billJson(receiptUrl: '2-r3')).status, BillStatus.paid);
+      expect(Bill.fromJson(billJson(receiptUrl: '2-r3', paymentUrl: '1-r3')).status, BillStatus.paid);
+      expect(BillStatus.values.map((s) => s.label), ['Unpaid', 'For verification', 'Paid']);
     });
 
     test('treats missing additional_charges as none', () {

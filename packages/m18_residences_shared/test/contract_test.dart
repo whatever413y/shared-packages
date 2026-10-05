@@ -39,6 +39,8 @@ void main() {
       expect(bill.consumption, 50);
       expect(bill.paid, isFalse);
       expect(bill.hasReceipt, isFalse);
+      expect(bill.hasPayment, isFalse);
+      expect(bill.status, BillStatus.unpaid);
     });
 
     test('bills.json and latest_bill.json have the same bill shape', () {

@@ -87,6 +87,10 @@ class AuthApi {
   Future<SignedFile> signedReceiptUrl(String tenantName, String filename) =>
       _signedFile('/signed-urls/receipts/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
 
+  /// Short-lived link to a bill's payment image stored under `tenant-payments/<tenant name>/<filename>`.
+  Future<SignedFile> signedTenantPaymentUrl(String tenantName, String filename) =>
+      _signedFile('/signed-urls/tenant-payments/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
+
   /// Short-lived link to a payment QR image (`payments/<name>.png`).
   Future<SignedFile> signedPaymentUrl(String name) => _signedFile('/signed-urls/payments/${Uri.encodeComponent(name)}');
 

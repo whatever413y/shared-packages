@@ -37,7 +37,7 @@ class ApiClient {
   Future<dynamic> put(String path, {Object? body, Set<int> expected = const {200}}) async =>
       _decode(await _http.put(uri(path), headers: await headers(), body: body == null ? null : jsonEncode(body)), expected);
 
-  Future<void> delete(String path, {Set<int> expected = const {204}}) async =>
+  Future<dynamic> delete(String path, {Set<int> expected = const {204}}) async =>
       _decode(await _http.delete(uri(path), headers: await headers()), expected);
 
   /// Sends a multipart request (authorization header added here; http sets the multipart content type).

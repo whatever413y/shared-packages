@@ -143,6 +143,9 @@ void main() {
 
       await auth.signedPaymentUrl('gcash');
       expect(sent.last.url.toString(), '$base/signed-urls/payments/gcash');
+
+      await auth.signedTenantPaymentUrl('JUAN DELA CRUZ', '1727000000-r3');
+      expect(sent.last.url.toString(), '$base/signed-urls/tenant-payments/JUAN%20DELA%20CRUZ/1727000000-r3');
     });
 
     test('a signed URL without content_type is not a PDF; without url it throws', () async {
@@ -201,6 +204,35 @@ void main() {
       expect(body, contains('name="receipt_file"; filename="receipt.webp"'));
       expect(body, contains('content-type: image/webp'));
       expect(body, isNot(contains('name="receipt_url"')), reason: 'no receipt_url field without a receipt URL');
+    });
+
+    test('uploadPayment sends a multipart PUT with only the payment file', () async {
+      SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
+      final bills = BillApi(client((_) async => json(billJson, 200)));
+
+      expect((await bills.uploadPayment(7, bytes: [1, 2, 3], filename: 'paid.webp', contentType: 'image/webp')).id, 7);
+
+      final upload = sent.single;
+      expect((upload.method, upload.url.path), ('PUT', '/api/bills/7/payment'));
+      expect(upload.headers['Authorization'], 'Bearer abc');
+      final body = latin1.decode(upload.bodyBytes);
+      expect(body, contains('name="payment_file"; filename="paid.webp"'));
+      expect(body, contains('content-type: image/webp'));
+      expect(body, isNot(contains('name="room_charges"')));
+    });
+
+    test('uploadPayment surfaces a 409 (bill already paid) as ApiException', () async {
+      final bills = BillApi(client((_) async => json({'error': 'This bill is already paid'}, 409)));
+      await expectLater(
+        bills.uploadPayment(7, bytes: [1], filename: 'p.png', contentType: 'image/png'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 409).having((e) => e.message, 'message', 'This bill is already paid')),
+      );
+    });
+
+    test('clearPayment deletes the payment image and returns the bill', () async {
+      final bills = BillApi(client((_) async => json(billJson, 200)));
+      expect((await bills.clearPayment(7)).id, 7);
+      expect((sent.single.method, sent.single.url.path), ('DELETE', '/api/bills/7/payment'));
     });
 
     test('delete expects 204', () async {

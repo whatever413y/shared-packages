@@ -1,6 +1,6 @@
 name: m18_residences_shared
 description: "Shared models, API client and widgets for the M18 Residences admin and tenant apps."
-version: 0.5.0
+version: 0.6.0
 publish_to: 'none'
 
 environment:
@@ -20,3 +20,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  assets:
+    # The HEIC decoder (LGPL-3.0), fetched by the browser only when a HEIC photo is picked.
+    - assets/heic-to/heic-to.js

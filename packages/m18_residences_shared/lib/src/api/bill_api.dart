@@ -41,6 +41,18 @@ class BillApi {
     return Bill.fromJson(await _client.send(multipart) as Map<String, dynamic>);
   }
 
+  /// Attaches the tenant's proof of payment (`payment_file`), replacing the previous one. Tenants may do this on
+  /// their own bills until a receipt is attached (then HTTP 409); admins always.
+  Future<Bill> uploadPayment(int id, {required List<int> bytes, required String filename, required String contentType}) async {
+    final multipart = http.MultipartRequest('PUT', _client.uri('/bills/$id/payment'))
+      ..files.add(http.MultipartFile.fromBytes('payment_file', bytes, filename: filename, contentType: MediaType.parse(contentType)));
+
+    return Bill.fromJson(await _client.send(multipart) as Map<String, dynamic>);
+  }
+
+  /// Removes the bill's payment image (admin).
+  Future<Bill> clearPayment(int id) async => Bill.fromJson(await _client.delete('/bills/$id/payment', expected: {200}) as Map<String, dynamic>);
+
   Future<void> delete(int id) => _client.delete('/bills/$id');
 
   List<Bill> _bills(dynamic data) => (data as List<dynamic>).map((b) => Bill.fromJson(b as Map<String, dynamic>)).toList();

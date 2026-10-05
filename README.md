@@ -14,7 +14,7 @@ dependencies:
     git:
       url: https://github.com/whatever413y/shared-packages.git
       path: packages/m18_residences_shared
-      ref: m18_residences_shared-v0.5.0
+      ref: m18_residences_shared-v0.6.0
 ```
 
 Local development against a sibling checkout: a gitignored `pubspec_overrides.yaml` in the app with `dependency_overrides: {m18_residences_shared: {path: ../shared-packages/packages/m18_residences_shared}}`.

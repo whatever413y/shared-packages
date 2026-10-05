@@ -176,31 +176,32 @@ void main() {
     await tester.pumpWidget(const SizedBox()); // dispose the repeating animation
   });
 
-  group('ReceiptLink', () {
+  group('BillFileButton', () {
     Future<SignedFile> neverCalled(String _, String _) => throw StateError('should not fetch');
 
-    testWidgets('renders nothing without a receipt (null or empty URL) or tenant name', (tester) async {
+    testWidgets('renders nothing without a file (null or empty URL) or tenant name', (tester) async {
       for (final (name, url) in [('ANA', null), ('ANA', ''), (null, '1727000000-r3')]) {
         await tester.pumpWidget(
           app(
             Scaffold(
-              body: ReceiptLink(tenantName: name, receiptUrl: url, fetchSignedFile: neverCalled),
+              body: BillFileButton(kind: BillFileKind.receipt, tenantName: name, fileUrl: url, fetchSignedFile: neverCalled),
             ),
           ),
         );
-        expect(find.byType(InkWell), findsNothing);
+        expect(find.byType(OutlinedButton), findsNothing);
       }
     });
 
-    testWidgets('shows the file name and opens a dialog with the fetch error', (tester) async {
+    testWidgets('shows a View button, no file name, and opens a dialog with the fetch error', (tester) async {
       final requested = <(String, String)>[];
       final completer = Completer<SignedFile>();
       await tester.pumpWidget(
         app(
           Scaffold(
-            body: ReceiptLink(
+            body: BillFileButton(
+              kind: BillFileKind.payment,
               tenantName: 'ANA',
-              receiptUrl: '1727000000-r3',
+              fileUrl: '1727000000-r3',
               fetchSignedFile: (name, file) {
                 requested.add((name, file));
                 return completer.future;
@@ -209,27 +210,37 @@ void main() {
           ),
         ),
       );
+      expect(find.textContaining('1727000000'), findsNothing);
+      expect(tester.getSize(find.byType(OutlinedButton)).height, greaterThanOrEqualTo(48));
 
-      await tester.tap(find.text('1727000000-r3'));
+      await tester.tap(find.text('View payment'));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(requested, [('ANA', '1727000000-r3')]);
+      expect(find.text('Payment · ANA'), findsOneWidget);
 
-      completer.completeError(const ApiException(404, '{"error":"Receipt not found"}'));
+      completer.completeError(const ApiException(404, '{"error":"Payment image not found"}'));
       await tester.pump();
-      expect(find.text('Error loading receipt: Receipt not found'), findsOneWidget);
+      expect(find.text('Error loading payment: Payment image not found'), findsOneWidget);
     });
 
-    testWidgets('showFullName shows the whole storage key', (tester) async {
+    testWidgets('the receipt kind says View receipt', (tester) async {
       await tester.pumpWidget(
         app(
           Scaffold(
-            body: ReceiptLink(tenantName: 'ANA', receiptUrl: '1727000000-r3', fetchSignedFile: neverCalled, showFullName: true),
+            body: BillFileButton(kind: BillFileKind.receipt, tenantName: 'ANA', fileUrl: '1-r3', fetchSignedFile: neverCalled),
           ),
         ),
       );
-      expect(find.text('receipts/ANA/1727000000-r3'), findsOneWidget);
+      expect(find.text('View receipt'), findsOneWidget);
     });
+  });
+
+  testWidgets('BillStatusChip shows the status label', (tester) async {
+    for (final status in BillStatus.values) {
+      await tester.pumpWidget(app(Scaffold(body: BillStatusChip(status))));
+      expect(find.text(status.label), findsOneWidget);
+    }
   });
 
   testWidgets('SignedImageDialog fetches its URL only once across rebuilds', (tester) async {

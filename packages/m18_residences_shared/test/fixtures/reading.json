@@ -1,10 +1,10 @@
 {
   "consumption": 50,
-  "created_at": "2026-10-02T01:12:35",
+  "created_at": "2026-10-05T09:22:06",
   "curr_reading": 150,
   "id": 1,
   "prev_reading": 100,
   "room_id": 1,
   "tenant_id": 1,
-  "updated_at": "2026-10-02T01:12:35"
+  "updated_at": "2026-10-05T09:22:06"
 }

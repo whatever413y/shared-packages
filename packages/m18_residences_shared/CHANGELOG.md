@@ -1,3 +1,10 @@
+## 0.6.0
+
+* Tenants' payment images (proof of payment): `Bill.paymentUrl`, `hasPayment` and `status` (`BillStatus.unpaid` / `forVerification` / `paid`, with `label`); `BillApi.uploadPayment` (multipart `payment_file`) and `clearPayment`; `AuthApi.signedTenantPaymentUrl`. Contract fixtures regenerated (`payment_url`).
+* **Breaking:** `ReceiptLink` is replaced by `BillFileButton` (`kind: BillFileKind.receipt|payment`): a "View receipt" / "View payment" button instead of a link showing the file name or storage key. New `BillStatusChip`.
+* The upload helpers moved here from the admin app so both apps use them: `pickFile`, `prepareReceipt`, `prepareQrPng`, `sniffReceiptType`, `PreparedReceipt`, `ReceiptException`; the HEIC decoder is now this package's asset `assets/heic-to/`.
+* `ApiClient.delete` returns the decoded body (for `DELETE` routes that answer with JSON).
+
 ## 0.5.0
 
 * **Breaking:** `SelectableApp` is gone: one selection area around the whole Navigator also picked up the text of the hidden pages underneath, so text in tables and dialogs couldn't be selected. Instead `AppTheme.lightTheme` gives every page its own `SelectionArea` (`SelectablePageTransitionsBuilder`), and `showSelectableDialog` does the same for dialogs (`SignedImageDialog` uses it).
