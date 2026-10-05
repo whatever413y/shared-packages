@@ -1,3 +1,5 @@
+import 'server_time.dart';
+
 /// An electricity meter reading for one tenant in one room.
 class Reading {
   final int id;
@@ -25,6 +27,6 @@ class Reading {
     prevReading: json['prev_reading'] as int,
     currReading: json['curr_reading'] as int,
     consumption: json['consumption'] as int,
-    createdAt: DateTime.parse(json['created_at'] as String),
+    createdAt: parseServerTimestamp(json['created_at'] as String),
   );
 }

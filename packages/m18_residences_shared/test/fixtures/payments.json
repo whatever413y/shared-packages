@@ -1,0 +1,17 @@
+[
+  {
+    "exists": false,
+    "key": "payments/bpi.png",
+    "name": "bpi"
+  },
+  {
+    "exists": true,
+    "key": "payments/gcash.png",
+    "name": "gcash"
+  },
+  {
+    "exists": false,
+    "key": "payments/maya.png",
+    "name": "maya"
+  }
+]

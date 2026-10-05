@@ -43,7 +43,9 @@ void main() {
       expect(bill.electricCharges, 850);
       expect(bill.totalAmount, 6050);
       expect(bill.paid, isFalse);
-      expect(bill.createdAt, DateTime.parse('2026-09-25T10:00:00.123456'));
+      // The server's naive UTC, shown in local time.
+      expect(bill.createdAt, DateTime.utc(2026, 9, 25, 10, 0, 0, 123, 456).toLocal());
+      expect(bill.createdAt.isUtc, isFalse);
       expect(bill.additionalCharges.single.amount, 200);
       expect(bill.additionalCharges.single.description, 'Water');
       expect(bill.reading!.roomId, 1);
@@ -71,7 +73,7 @@ void main() {
   test('Reading.fromJson', () {
     final reading = Reading.fromJson(readingJson);
     expect((reading.id, reading.tenantId, reading.roomId, reading.consumption), (3, 2, 1, 50));
-    expect(reading.createdAt, DateTime(2026, 9, 24, 9));
+    expect(reading.createdAt, DateTime.utc(2026, 9, 24, 9).toLocal());
   });
 
   test('Tenant.fromJson', () {
@@ -141,5 +143,13 @@ void main() {
         'additional_charges': '[{"amount":200,"description":"Water"}]',
       });
     });
+  });
+
+  test('SignedFile saves WebP, AVIF and GIF as JPEG, other types as they are', () {
+    String saved(String? type) => SignedFile(url: 'u', contentType: type).saveExtension;
+    expect(['image/webp', 'image/avif', 'image/gif'].map(saved), ['jpg', 'jpg', 'jpg']);
+    expect(['image/jpeg', 'image/png', 'application/pdf', null].map(saved), ['jpg', 'png', 'pdf', 'bin']);
+    expect(const SignedFile(url: 'u', contentType: 'image/webp').savesAsJpeg, isTrue);
+    expect(const SignedFile(url: 'u', contentType: 'image/jpeg').savesAsJpeg, isFalse);
   });
 }

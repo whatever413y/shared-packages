@@ -1,6 +1,11 @@
 ## Unreleased
 
 * Responsive helpers: `WindowSize` (compact < 600 ≤ medium < 1024 ≤ expanded), `context.windowSize`, `ResponsiveBuilder`, `ResponsiveCenter` (caps content at 1200 px).
+* `SignedImageDialog` has a header with the file's name, Save (downloads it; WebP, AVIF and GIF are converted to JPEG in the browser), Open in new tab and Close; new optional `fileName`, `saveName` and `saveFile`. `saveSignedFile` does the download.
+* `ReceiptLink`: `showFullName` shows the whole storage key (`receipts/<tenant>/<file>`); the dialog saves as `receipt-<tenant>-<file>`.
+* `SelectableApp`: use as `MaterialApp.builder` to make every text selectable and copyable, dialogs included.
+* `PaymentApi` (`list`, `upload`) and `PaymentImage` for the admin's payment QR images (`GET/PUT /api/payments`); contract fixture `payments.json`.
+* `Bill.createdAt` and `Reading.createdAt` are parsed as UTC (the server sends UTC without a zone) and returned in local time, instead of being read as local time (8 h off).
 
 ## 0.3.0
 

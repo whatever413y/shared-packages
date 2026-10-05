@@ -219,6 +219,17 @@ void main() {
       await tester.pump();
       expect(find.text('Error loading receipt: Receipt not found'), findsOneWidget);
     });
+
+    testWidgets('showFullName shows the whole storage key', (tester) async {
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: ReceiptLink(tenantName: 'ANA', receiptUrl: '1727000000-r3', fetchSignedFile: neverCalled, showFullName: true),
+          ),
+        ),
+      );
+      expect(find.text('receipts/ANA/1727000000-r3'), findsOneWidget);
+    });
   });
 
   testWidgets('SignedImageDialog fetches its URL only once across rebuilds', (tester) async {
@@ -275,6 +286,100 @@ void main() {
 
     await tester.tap(find.text('Open PDF'));
     expect(opened, ['https://api.test/api/files/r.pdf']);
+  });
+
+  testWidgets('SignedImageDialog saves under its save name, reports failures and closes', (tester) async {
+    const pdf = SignedFile(url: 'https://api.test/api/files/r.pdf', contentType: 'application/pdf');
+    final saved = <(SignedFile, String)>[];
+    var fail = false;
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => SignedImageDialog.show(
+              context,
+              subject: 'receipt',
+              fileName: 'receipts/ANA/1727000000-r3',
+              saveName: 'receipt-ANA-1727000000-r3',
+              fetchFile: () async => pdf,
+              saveFile: (file, name) async {
+                if (fail) throw Exception('offline');
+                saved.add((file, name));
+              },
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('receipts/ANA/1727000000-r3'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(saved, [(pdf, 'receipt-ANA-1727000000-r3')]);
+
+    fail = true;
+    await tester.tap(find.byTooltip('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saving the receipt failed: Exception: offline'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('SignedImageDialog disables Save until the file is fetched, and when fetching failed', (tester) async {
+    final completer = Completer<SignedFile>();
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => SignedImageDialog.show(context, fetchFile: () => completer.future),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    IconButton save() => tester.widget<IconButton>(find.ancestor(of: find.byIcon(Icons.download), matching: find.byType(IconButton)));
+    expect(save().onPressed, isNull);
+    expect(find.text('Image'), findsOneWidget, reason: 'the capitalized subject when there is no file name');
+
+    completer.completeError(const ApiException(500, 'down'));
+    await tester.pump();
+    expect(save().onPressed, isNull);
+  });
+
+  testWidgets('SelectableApp makes text selectable in pages and dialogs', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SelectableApp(child: child!),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) => const AlertDialog(content: Text('Account 1234')),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(SelectionArea), findsOneWidget);
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    // Long press selects a word and shows the handles and menu, which need the Overlay.
+    await tester.longPress(find.text('Account 1234'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Copy'), findsOneWidget);
   });
 
   group('responsive', () {

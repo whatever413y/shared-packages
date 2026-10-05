@@ -210,6 +210,36 @@ void main() {
     });
   });
 
+  group('PaymentApi', () {
+    test('list reads the payment images', () async {
+      final payments = PaymentApi(
+        client(
+          (_) async => json([
+            {'name': 'gcash', 'key': 'payments/gcash.png', 'exists': true},
+          ], 200),
+        ),
+      );
+      final images = await payments.list();
+      expect(sent.single.url.path, '/api/payments');
+      expect((images.single.name, images.single.key, images.single.exists), ('gcash', 'payments/gcash.png', true));
+    });
+
+    test('upload sends the PNG as the multipart file part', () async {
+      SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
+      final payments = PaymentApi(client((_) async => json({'name': 'gcash', 'key': 'payments/gcash.png', 'exists': true}, 200)));
+
+      final image = await payments.upload('gcash', [1, 2, 3]);
+
+      final upload = sent.single;
+      expect((upload.method, upload.url.path), ('PUT', '/api/payments/gcash'));
+      expect(upload.headers['Authorization'], 'Bearer abc');
+      final body = latin1.decode(upload.bodyBytes);
+      expect(body, contains('name="file"; filename="gcash.png"'));
+      expect(body, contains('content-type: image/png'));
+      expect(image.exists, isTrue);
+    });
+  });
+
   test('Room, tenant and reading APIs use the expected paths and bodies', () async {
     final api = client((request) async {
       final path = request.url.path;

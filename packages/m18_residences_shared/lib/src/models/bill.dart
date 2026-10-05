@@ -1,5 +1,6 @@
 import 'additional_charge.dart';
 import 'reading.dart';
+import 'server_time.dart';
 
 /// A bill as returned by the API: `{"bill": {...}, "additional_charges": [...], "reading": {...}}`.
 class Bill {
@@ -50,7 +51,7 @@ class Bill {
       totalAmount: bill['total_amount'] as int,
       paid: bill['paid'] as bool,
       receiptUrl: bill['receipt_url'] as String?,
-      createdAt: DateTime.parse(bill['created_at'] as String),
+      createdAt: parseServerTimestamp(bill['created_at'] as String),
       additionalCharges: charges.map((c) => AdditionalCharge.fromJson(c as Map<String, dynamic>)).toList(),
       reading: reading == null ? null : Reading.fromJson(reading),
     );
