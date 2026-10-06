@@ -287,6 +287,18 @@ class AppTheme {
         showDragHandle: true,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: panel,
+        surfaceTintColor: Colors.transparent,
+        elevation: 8,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(24))),
+        headerBackgroundColor: scheme.primaryContainer,
+        headerForegroundColor: scheme.onPrimaryContainer,
+        todayBorder: BorderSide(color: scheme.primary),
+        dividerColor: scheme.outlineVariant,
+        cancelButtonStyle: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+        confirmButtonStyle: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: panel,
         surfaceTintColor: Colors.transparent,
@@ -316,13 +328,6 @@ class AppTheme {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
         side: BorderSide(color: scheme.outlineVariant),
         labelStyle: text.labelLarge!.copyWith(fontWeight: FontWeight.w500),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: scheme.inverseSurface,
-        contentTextStyle: text.bodyMedium!.copyWith(color: scheme.onInverseSurface),
-        actionTextColor: scheme.inversePrimary,
-        shape: const RoundedRectangleBorder(borderRadius: radius12),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: panel,

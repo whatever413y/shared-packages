@@ -603,4 +603,107 @@ void main() {
     final paint = find.descendant(of: find.byType(BrandMark), matching: find.byType(CustomPaint)).first;
     expect(tester.getSize(paint), const Size(40, 40));
   });
+
+  group('showAppModal', () {
+    Future<void> openAt(WidgetTester tester, double width) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showAppModal<void>(
+                  context,
+                  builder: (_) => AppModal(
+                    title: 'New Room',
+                    actions: [FilledButton(onPressed: () {}, child: const Text('Save'))],
+                    child: const Text('form'),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a centered dialog on wide windows, with one Close', (tester) async {
+      await openAt(tester, 1440);
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('New Room'), findsOneWidget);
+      expect(find.byTooltip('Close'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(find.text('form'), findsNothing);
+    });
+
+    testWidgets('a bottom sheet on phones, its text selectable', (tester) async {
+      await openAt(tester, 390);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.ancestor(of: find.text('form'), matching: find.byType(SelectionArea)), findsWidgets);
+      expect(find.text('Save'), findsOneWidget);
+    });
+  });
+
+  group('AppToast', () {
+    Future<BuildContext> pumpHost(WidgetTester tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (c) {
+                context = c;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      return context;
+    }
+
+    testWidgets('success closes by itself after a few seconds', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Bill created', type: ToastType.success);
+      // Not pumpAndSettle: the progress line animates until the toast closes.
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Bill created'), findsOneWidget);
+      final semantics = tester.widget<Semantics>(find.ancestor(of: find.text('Bill created'), matching: find.byType(Semantics)).first);
+      expect(semantics.properties.liveRegion, isTrue);
+      await tester.pump(AppToast.autoClose);
+      await tester.pumpAndSettle();
+      expect(find.text('Bill created'), findsNothing);
+    });
+
+    testWidgets('a new toast replaces the current one', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Creating bill...', type: ToastType.loading);
+      await tester.pump(const Duration(milliseconds: 300));
+      AppToast.show(context, 'Bill created', type: ToastType.success);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Creating bill...'), findsNothing);
+      expect(find.text('Bill created'), findsOneWidget);
+      AppToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.text('Bill created'), findsNothing);
+    });
+
+    testWidgets('errors stay until dismissed', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Failed to delete bill', type: ToastType.error);
+      await tester.pump(const Duration(seconds: 30));
+      expect(find.text('Failed to delete bill'), findsOneWidget);
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pumpAndSettle();
+      expect(find.text('Failed to delete bill'), findsNothing);
+    });
+  });
 }
