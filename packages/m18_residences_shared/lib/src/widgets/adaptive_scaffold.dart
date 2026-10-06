@@ -6,14 +6,18 @@ import 'responsive.dart';
 /// One top-level screen of an [AdaptiveScaffold].
 class AdaptiveDestination {
   final String label;
+
+  /// A shorter label for the bottom bar on phones (defaults to [label]).
+  final String compactLabel;
   final IconData icon;
   final IconData selectedIcon;
 
   /// Shown as a badge on the icon when above zero (e.g. payments waiting for verification).
   final int badgeCount;
 
-  const AdaptiveDestination({required this.label, required this.icon, IconData? selectedIcon, this.badgeCount = 0})
-    : selectedIcon = selectedIcon ?? icon;
+  const AdaptiveDestination({required this.label, required this.icon, IconData? selectedIcon, this.badgeCount = 0, String? compactLabel})
+    : selectedIcon = selectedIcon ?? icon,
+      compactLabel = compactLabel ?? label;
 
   Widget _icon(bool selected) {
     final child = Icon(selected ? selectedIcon : icon);
@@ -130,7 +134,7 @@ class AdaptiveScaffold extends StatelessWidget {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           onDestinationSelected: (index) => index < inBar.length ? onDestinationSelected(index) : _showMore(context, inBar.length),
           destinations: [
-            for (final d in inBar) NavigationDestination(icon: d._icon(false), selectedIcon: d._icon(true), label: d.label),
+            for (final d in inBar) NavigationDestination(icon: d._icon(false), selectedIcon: d._icon(true), label: d.compactLabel, tooltip: d.label),
             if (overflow)
               NavigationDestination(
                 icon: AdaptiveDestination(label: 'More', icon: Icons.menu, badgeCount: moreBadge)._icon(false),
