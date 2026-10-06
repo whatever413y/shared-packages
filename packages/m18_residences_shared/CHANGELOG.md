@@ -1,3 +1,9 @@
+## 0.8.0
+
+* Modals: `showAppModal` shows an `AppModal` as a bottom sheet on phones (drag handle, lifted above the keyboard) and as a centered dialog on wider windows, its text selectable either way. `AppModal` has a header (optional icon, overline, title, subtitle, trailing widget, and the only "Close" button), a scrolling body and a fixed footer for actions.
+* Toasts: `AppToast.show(context, message, type: ToastType.success|error|info|loading, title:)` / `AppToast.hide()`: a card at the top (top-right on wider windows), one at a time, announced to screen readers. Success and info close after 4 s (paused on hover), loading toasts when replaced, errors only when dismissed. The unused `snackBarTheme` is gone.
+* `SignedImageDialog` restyled (icon and title header, the image on a neutral panel, max 760 px wide); the "More" sheet has a title; `AppTheme` styles the date picker.
+
 ## 0.7.0
 
 * **Breaking (redesign):** `AppTheme.lightTheme` and `AppColors` are replaced by `AppTheme.light` and `AppTheme.dark` (deep teal `AppTheme.brand` on slate surfaces, Material 3 `ColorScheme`s, flat bordered cards). Use both with `themeMode: ThemeMode.system`. The font is Inter (SIL OFL), bundled as a subset (Latin, punctuation, ₱; ~60 KB per weight).
