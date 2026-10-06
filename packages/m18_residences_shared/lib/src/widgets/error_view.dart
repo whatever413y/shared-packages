@@ -11,18 +11,36 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            message,
-            style: const TextStyle(color: Colors.red),
-            textAlign: TextAlign.center,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: scheme.errorContainer,
+                child: Icon(Icons.cloud_off_outlined, color: scheme.onErrorContainer),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                style: theme.textTheme.bodyLarge?.copyWith(color: scheme.error),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.tonalIcon(
+                onPressed: onRetry ?? () => LogoutScope.logout(context),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh'),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(onPressed: onRetry ?? () => LogoutScope.logout(context), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
-        ],
+        ),
       ),
     );
   }

@@ -25,3 +25,16 @@ flutter:
   assets:
     # The HEIC decoder (LGPL-3.0), fetched by the browser only when a HEIC photo is picked.
     - assets/heic-to/heic-to.js
+  # Inter (SIL OFL 1.1, assets/fonts/inter/OFL.txt), subset to Latin, punctuation and ₱ (~60 KB per weight).
+  # AppTheme uses it as 'packages/m18_residences_shared/Inter'.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/inter/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/inter/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/inter/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/inter/Inter-Bold.ttf
+          weight: 700

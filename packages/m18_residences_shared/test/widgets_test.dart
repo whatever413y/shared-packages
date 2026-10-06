@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
 
 Widget app(Widget home, {void Function(BuildContext)? onLogout}) {
-  final material = MaterialApp(theme: AppTheme.lightTheme, home: home);
+  final material = MaterialApp(theme: AppTheme.light, home: home);
   return onLogout == null ? material : LogoutScope(onLogout: onLogout, child: material);
 }
 
@@ -368,7 +368,7 @@ void main() {
   testWidgets('pages and dialogs each get their own selection area', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.light,
         home: Builder(
           builder: (context) => Scaffold(
             body: TextButton(
@@ -462,5 +462,117 @@ void main() {
       );
       expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.maxContentWidth);
     });
+  });
+
+  group('AppTheme', () {
+    test('light and dark carry their status colors', () {
+      expect(AppTheme.light.extension<StatusColors>(), StatusColors.light);
+      expect(AppTheme.dark.extension<StatusColors>(), StatusColors.dark);
+      expect(AppTheme.dark.colorScheme.brightness, Brightness.dark);
+      expect(AppTheme.light.colorScheme.primary, AppTheme.brand);
+    });
+
+    testWidgets('BillStatusChip takes its colors from the theme', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark,
+          home: const Scaffold(body: BillStatusChip(BillStatus.paid)),
+        ),
+      );
+      final label = tester.widget<Text>(find.text('Paid'));
+      expect(label.style?.color, StatusColors.dark.onPaid);
+    });
+  });
+
+  group('money', () {
+    test('formatPeso shows whole pesos with separators', () {
+      expect(formatPeso(6050), '₱6,050');
+      expect(formatPeso(0), '₱0');
+      expect(formatCount(1234), '1,234');
+    });
+
+    testWidgets('MoneyText uses tabular figures', (tester) async {
+      await tester.pumpWidget(app(const Scaffold(body: MoneyText(7386))));
+      final text = tester.widget<Text>(find.text('₱7,386'));
+      expect(text.style?.fontFeatures, AppTheme.tabularFigures);
+    });
+  });
+
+  group('AdaptiveScaffold', () {
+    const destinations = [
+      AdaptiveDestination(label: 'Dashboard', icon: Icons.dashboard_outlined),
+      AdaptiveDestination(label: 'Verify', icon: Icons.fact_check_outlined, badgeCount: 2),
+      AdaptiveDestination(label: 'Billing', icon: Icons.receipt_long_outlined),
+      AdaptiveDestination(label: 'Readings', icon: Icons.bolt_outlined),
+      AdaptiveDestination(label: 'Tenants', icon: Icons.people_outline),
+      AdaptiveDestination(label: 'Rooms', icon: Icons.meeting_room_outlined),
+    ];
+
+    Future<List<int>> pumpAt(WidgetTester tester, double width) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final selected = <int>[];
+      await tester.pumpWidget(
+        app(
+          StatefulBuilder(
+            builder: (context, setState) => AdaptiveScaffold(
+              destinations: destinations,
+              selectedIndex: selected.isEmpty ? 0 : selected.last,
+              onDestinationSelected: (i) => setState(() => selected.add(i)),
+              moreSheetFooter: (_) => [const ListTile(title: Text('Logout'))],
+              body: const Text('page'),
+            ),
+          ),
+        ),
+      );
+      return selected;
+    }
+
+    testWidgets('compact: a bottom bar with the first four and a More sheet for the rest', (tester) async {
+      final selected = await pumpAt(tester, 390);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.text('Tenants'), findsNothing);
+      expect(find.text('2'), findsOneWidget); // the Verify badge
+
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      expect(find.text('Logout'), findsOneWidget);
+      await tester.tap(find.text('Rooms'));
+      await tester.pumpAndSettle();
+      expect(selected, [5]);
+      expect(find.text('Logout'), findsNothing);
+    });
+
+    testWidgets('medium: a rail with labels; expanded: an extended rail', (tester) async {
+      final selected = await pumpAt(tester, 800);
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(tester.widget<NavigationRail>(find.byType(NavigationRail)).extended, isFalse);
+      await tester.tap(find.text('Rooms'));
+      await tester.pumpAndSettle();
+      expect(selected, [5]);
+
+      await pumpAt(tester, 1440);
+      expect(tester.widget<NavigationRail>(find.byType(NavigationRail)).extended, isTrue);
+    });
+  });
+
+  testWidgets('EmptyState shows its title, message and action', (tester) async {
+    await tester.pumpWidget(
+      app(
+        Scaffold(
+          body: EmptyState(
+            icon: Icons.check,
+            title: 'All payments verified',
+            message: 'Nothing to check.',
+            action: TextButton(onPressed: () {}, child: const Text('Refresh')),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('All payments verified'), findsOneWidget);
+    expect(find.text('Nothing to check.'), findsOneWidget);
+    expect(find.text('Refresh'), findsOneWidget);
   });
 }

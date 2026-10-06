@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/bill.dart';
 import '../models/signed_file.dart';
+import 'app_theme.dart';
 import 'signed_image_dialog.dart';
 
 /// The two files a bill can have.
@@ -60,33 +61,38 @@ class BillFileButton extends StatelessWidget {
   }
 }
 
-/// A bill's [BillStatus] as a coloured label: red Unpaid, amber For verification, green Paid (AA contrast).
+/// A bill's [BillStatus] as a coloured label: red Unpaid, amber For verification, green Paid ([StatusColors],
+/// AA contrast in light and dark).
 class BillStatusChip extends StatelessWidget {
   final BillStatus status;
 
-  const BillStatusChip(this.status, {super.key});
+  /// A larger chip, for headers.
+  final bool large;
 
-  static (Color, Color, IconData) _style(BillStatus status) => switch (status) {
-    BillStatus.unpaid => (const Color(0xFFFFEBEE), const Color(0xFFB71C1C), Icons.error_outline),
-    BillStatus.forVerification => (const Color(0xFFFFF3E0), const Color(0xFF8A4B00), Icons.hourglass_top),
-    BillStatus.paid => (const Color(0xFFE8F5E9), const Color(0xFF1B5E20), Icons.check_circle_outline),
+  const BillStatusChip(this.status, {super.key, this.large = false});
+
+  static IconData icon(BillStatus status) => switch (status) {
+    BillStatus.unpaid => Icons.error_outline,
+    BillStatus.forVerification => Icons.hourglass_top,
+    BillStatus.paid => Icons.check_circle_outline,
   };
 
   @override
   Widget build(BuildContext context) {
-    final (background, foreground, icon) = _style(status);
+    final (background, foreground) = StatusColors.of(context).forStatus(status);
+    final textStyle = (large ? Theme.of(context).textTheme.labelLarge : Theme.of(context).textTheme.labelMedium)!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+      padding: EdgeInsets.symmetric(horizontal: large ? 12 : 10, vertical: large ? 6 : 4),
+      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: foreground),
+          Icon(icon(status), size: large ? 18 : 16, color: foreground),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               status.label,
-              style: TextStyle(color: foreground, fontWeight: FontWeight.w600),
+              style: textStyle.copyWith(color: foreground, fontWeight: FontWeight.w600),
             ),
           ),
         ],

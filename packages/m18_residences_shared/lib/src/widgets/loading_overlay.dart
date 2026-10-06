@@ -41,11 +41,12 @@ class _LoadingOverlayState extends State<LoadingOverlay> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final maxTextWidth = screenWidth > 600 ? 500.0 : screenWidth * 0.8;
+    final theme = Theme.of(context);
 
     return Container(
-      color: Colors.white.withValues(alpha: 0.3),
+      color: theme.colorScheme.surface.withValues(alpha: 0.6),
       child: Stack(
         children: [
           Center(
@@ -63,7 +64,7 @@ class _LoadingOverlayState extends State<LoadingOverlay> with SingleTickerProvid
                         constraints: BoxConstraints(maxWidth: maxTextWidth),
                         child: Text(
                           "Server taking too long to respond, please wait a moment${_buildDots()}",
-                          style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w500),
+                          style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
                           textAlign: TextAlign.center,
                           softWrap: true,
                         ),

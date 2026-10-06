@@ -22,7 +22,7 @@ class CustomDropdownForm<T> extends StatelessWidget {
     required this.onChanged,
     this.validator,
     this.isExpanded = true,
-    this.contentPadding = const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     this.semanticsId,
   });
 
@@ -30,7 +30,8 @@ class CustomDropdownForm<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final dropdown = DropdownButtonFormField<T>(
       isExpanded: isExpanded,
-      decoration: InputDecoration(labelText: label, hintText: hint, border: const OutlineInputBorder(), contentPadding: contentPadding),
+      decoration: InputDecoration(labelText: label, hintText: hint, contentPadding: contentPadding),
+      borderRadius: BorderRadius.circular(12),
       initialValue: value,
       items: items,
       onChanged: onChanged,
