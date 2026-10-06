@@ -24,3 +24,15 @@ Future<T?> showSelectableDialog<T>({required BuildContext context, required Widg
   barrierDismissible: barrierDismissible,
   builder: (context) => SelectionArea(child: builder(context)),
 );
+
+/// A page kept alive next to others (e.g. in an [IndexedStack] of a navigation shell) with its own [SelectionArea],
+/// cut off from the route's: otherwise the hidden pages' text shares the route's area and a drag over the visible
+/// page can select text of a hidden one.
+class SelectablePage extends StatelessWidget {
+  final Widget child;
+
+  const SelectablePage({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => SelectionContainer.disabled(child: SelectionArea(child: child));
+}

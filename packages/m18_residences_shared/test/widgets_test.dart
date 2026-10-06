@@ -575,4 +575,24 @@ void main() {
     expect(find.text('Nothing to check.'), findsOneWidget);
     expect(find.text('Refresh'), findsOneWidget);
   });
+
+  testWidgets('SelectablePage: a hidden page of an IndexedStack is not in the visible page\'s selection area', (tester) async {
+    await tester.pumpWidget(
+      app(
+        const Scaffold(
+          body: IndexedStack(
+            index: 1,
+            children: [
+              SelectablePage(child: Text('hidden')),
+              SelectablePage(child: Text('shown')),
+            ],
+          ),
+        ),
+      ),
+    );
+    final shownArea = find.ancestor(of: find.text('shown'), matching: find.byType(SelectionArea)).first;
+    expect(find.descendant(of: shownArea, matching: find.text('hidden', skipOffstage: false)), findsNothing);
+    // The hidden page has an area of its own.
+    expect(find.ancestor(of: find.text('hidden', skipOffstage: false), matching: find.byType(SelectionArea)), findsWidgets);
+  });
 }

@@ -3,6 +3,7 @@
 * **Breaking (redesign):** `AppTheme.lightTheme` and `AppColors` are replaced by `AppTheme.light` and `AppTheme.dark` (deep teal `AppTheme.brand` on slate surfaces, Material 3 `ColorScheme`s, flat bordered cards). Use both with `themeMode: ThemeMode.system`. The font is Inter (SIL OFL), bundled as a subset (Latin, punctuation, ₱; ~60 KB per weight).
 * `StatusColors` (a `ThemeExtension`): the Unpaid / For verification / Paid colors for light and dark; `BillStatusChip` uses them (new `large`, `BillStatusChip.icon`).
 * New widgets: `AdaptiveScaffold` + `AdaptiveDestination` (bottom bar with a "More" sheet on phones, a rail on tablets, an extended rail on desktops; badges), `AppSection`, `EmptyState`, `BrandMark`, `MoneyText`; `formatPeso` and `formatCount`.
+* `SelectablePage`: a page of a navigation shell's `IndexedStack` with its own selection area, so a drag over the visible page never selects a hidden page's text.
 * `CustomAppBar` takes its colors from the theme and has `showLeading` (off for pages inside a navigation shell); `ErrorView`, `LoadingOverlay` and `CustomDropdownForm` follow the theme too.
 
 ## 0.6.0
