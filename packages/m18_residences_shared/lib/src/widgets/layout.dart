@@ -77,7 +77,8 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// The apps' brand mark: a rounded teal tile with "M18", optionally followed by [label].
+/// The apps' logo: the roofline M (two house gables) on a rounded tile in the theme's primary color, optionally
+/// followed by [label]. The same mark as the apps' web icons (`web/icons/logo.svg`).
 class BrandMark extends StatelessWidget {
   final String? label;
   final double size;
@@ -88,15 +89,9 @@ class BrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final tile = Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(size * 0.28)),
-      child: Text(
-        'M18',
-        style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w700, fontSize: size * 0.34, letterSpacing: -0.3),
-      ),
+    final tile = Semantics(
+      label: 'M18 Residences logo',
+      child: CustomPaint(size: Size.square(size), painter: _RooflineMPainter(scheme.primary, scheme.onPrimary)),
     );
     if (label == null) return tile;
     return Row(
@@ -110,4 +105,39 @@ class BrandMark extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The logo on a 512 grid (as in the web icons): a tile with radius 112 and the gables
+/// `M128 350 V226 L192 162 L256 226 L320 162 L384 226 V350`, stroked 44 wide with round ends.
+class _RooflineMPainter extends CustomPainter {
+  final Color background;
+  final Color foreground;
+
+  const _RooflineMPainter(this.background, this.foreground);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final k = size.shortestSide / 512;
+    canvas.drawRRect(RRect.fromRectAndRadius(Offset.zero & Size.square(512 * k), Radius.circular(112 * k)), Paint()..color = background);
+    final mark = Path()
+      ..moveTo(128 * k, 350 * k)
+      ..lineTo(128 * k, 226 * k)
+      ..lineTo(192 * k, 162 * k)
+      ..lineTo(256 * k, 226 * k)
+      ..lineTo(320 * k, 162 * k)
+      ..lineTo(384 * k, 226 * k)
+      ..lineTo(384 * k, 350 * k);
+    canvas.drawPath(
+      mark,
+      Paint()
+        ..color = foreground
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 44 * k
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RooflineMPainter old) => old.background != background || old.foreground != foreground;
 }

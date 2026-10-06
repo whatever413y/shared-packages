@@ -595,4 +595,12 @@ void main() {
     // The hidden page has an area of its own.
     expect(find.ancestor(of: find.text('hidden', skipOffstage: false), matching: find.byType(SelectionArea)), findsWidgets);
   });
+
+  testWidgets('BrandMark paints the logo and shows its label', (tester) async {
+    await tester.pumpWidget(app(const Scaffold(body: BrandMark(label: 'M18 Admin', size: 40))));
+    expect(find.text('M18 Admin'), findsOneWidget);
+    expect(find.bySemanticsLabel('M18 Residences logo'), findsOneWidget);
+    final paint = find.descendant(of: find.byType(BrandMark), matching: find.byType(CustomPaint)).first;
+    expect(tester.getSize(paint), const Size(40, 40));
+  });
 }
