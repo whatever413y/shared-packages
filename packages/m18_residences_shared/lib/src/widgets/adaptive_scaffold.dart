@@ -129,18 +129,23 @@ class AdaptiveScaffold extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: scheme.outlineVariant)),
         ),
-        child: NavigationBar(
-          selectedIndex: barIndex,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          onDestinationSelected: (index) => index < inBar.length ? onDestinationSelected(index) : _showMore(context, inBar.length),
-          destinations: [
-            for (final d in inBar) NavigationDestination(icon: d._icon(false), selectedIcon: d._icon(true), label: d.compactLabel, tooltip: d.label),
-            if (overflow)
-              NavigationDestination(
-                icon: AdaptiveDestination(label: 'More', icon: Icons.menu, badgeCount: moreBadge)._icon(false),
-                label: 'More',
-              ),
-          ],
+        // Five labels share a phone's width: larger system text grows them a little, never onto a second line.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.15,
+          child: NavigationBar(
+            selectedIndex: barIndex,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            onDestinationSelected: (index) => index < inBar.length ? onDestinationSelected(index) : _showMore(context, inBar.length),
+            destinations: [
+              for (final d in inBar)
+                NavigationDestination(icon: d._icon(false), selectedIcon: d._icon(true), label: d.compactLabel, tooltip: d.label),
+              if (overflow)
+                NavigationDestination(
+                  icon: AdaptiveDestination(label: 'More', icon: Icons.menu, badgeCount: moreBadge)._icon(false),
+                  label: 'More',
+                ),
+            ],
+          ),
         ),
       ),
     );
