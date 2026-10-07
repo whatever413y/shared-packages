@@ -4,6 +4,9 @@ import '../api/api_exception.dart';
 import '../models/signed_file.dart';
 import '../web/open_url.dart';
 import '../web/save_file.dart';
+import 'app_theme.dart';
+import 'close_button.dart';
+import 'modal.dart';
 import 'responsive.dart';
 import 'selectable.dart';
 
@@ -110,43 +113,49 @@ class _SignedImageDialogState extends State<SignedImageDialog> {
     final subject = widget.subject;
     final title = widget.fileName ?? '${subject[0].toUpperCase()}${subject.substring(1)}';
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: theme.colorScheme.primaryContainer,
-            child: Icon(
-              file?.isPdf ?? false ? Icons.picture_as_pdf_outlined : Icons.image_outlined,
-              size: 20,
-              color: theme.colorScheme.onPrimaryContainer,
+    final scheme = theme.colorScheme;
+    // The same header band as AppModal.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppTheme.modalBandColor(scheme),
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+        child: Row(
+          children: [
+            AppModal.icon(context, file?.isPdf ?? false ? Icons.picture_as_pdf_outlined : Icons.image_outlined),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(title, style: theme.textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          Semantics(
-            container: true,
-            identifier: 'signed-file-save',
-            child: IconButton(
-              tooltip: 'Save',
-              onPressed: file == null || _saving ? null : () => _save(file),
-              icon: _saving ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.download),
+            Semantics(
+              container: true,
+              identifier: 'signed-file-save',
+              child: IconButton(
+                tooltip: 'Save',
+                onPressed: file == null || _saving ? null : () => _save(file),
+                icon: _saving ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.download),
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Open in new tab',
-            onPressed: file == null ? null : () => widget.openUrl(file.url),
-            icon: const Icon(Icons.open_in_new),
-          ),
-          Semantics(
-            container: true,
-            identifier: 'signed-file-close',
-            child: IconButton(tooltip: 'Close', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
-          ),
-        ],
+            IconButton(
+              tooltip: 'Open in new tab',
+              onPressed: file == null ? null : () => widget.openUrl(file.url),
+              icon: const Icon(Icons.open_in_new),
+            ),
+            const SizedBox(width: 4),
+            Semantics(
+              container: true,
+              identifier: 'signed-file-close',
+              child: CloseCircleButton(onPressed: () => Navigator.of(context).pop()),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget app(Widget home, {void Function(BuildContext)? onLogout}) {
   final material = MaterialApp(theme: AppTheme.light, home: home);
@@ -409,12 +410,16 @@ void main() {
   });
 
   group('responsive', () {
-    test('WindowSize.fromWidth uses the 600 / 1024 breakpoints', () {
+    test('WindowSize.fromWidth uses the 600 / 1024 / 1600 breakpoints', () {
       expect(WindowSize.fromWidth(360), WindowSize.compact);
       expect(WindowSize.fromWidth(599), WindowSize.compact);
       expect(WindowSize.fromWidth(600), WindowSize.medium);
       expect(WindowSize.fromWidth(1023), WindowSize.medium);
       expect(WindowSize.fromWidth(1024), WindowSize.expanded);
+      expect(WindowSize.fromWidth(1599), WindowSize.expanded);
+      expect(WindowSize.fromWidth(1600), WindowSize.large);
+      expect(WindowSize.large.isExpanded, isTrue, reason: 'large windows keep the expanded layout');
+      expect((WindowSize.expanded.contentMaxWidth, WindowSize.large.contentMaxWidth), (1200, 1600));
     });
 
     Future<void> pumpAt(WidgetTester tester, double width, Widget child) async {
@@ -424,7 +429,12 @@ void main() {
       await tester.pumpWidget(app(child));
     }
 
-    for (final (width, expected) in [(360.0, 'compact'), (800.0, 'medium'), (1440.0, 'expanded')]) {
+    for (final (width, expected, built) in [
+      (360.0, 'compact', 'compact'),
+      (800.0, 'medium', 'medium'),
+      (1440.0, 'expanded', 'expanded'),
+      (1920.0, 'large', 'expanded'),
+    ]) {
       testWidgets('ResponsiveBuilder and context.windowSize pick $expected at $width px', (tester) async {
         await pumpAt(
           tester,
@@ -443,7 +453,7 @@ void main() {
           ),
         );
         expect(find.text('window: $expected'), findsOneWidget);
-        expect(find.text(expected), findsOneWidget);
+        expect(find.text(built), findsOneWidget);
       });
     }
 
@@ -461,6 +471,17 @@ void main() {
         ),
       );
       expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.maxContentWidth);
+    });
+
+    testWidgets('ResponsiveCenter lets content grow to 1600 px on large screens', (tester) async {
+      await pumpAt(
+        tester,
+        2560,
+        const ResponsiveCenter(
+          child: SizedBox(key: Key('content'), width: double.infinity, height: 10),
+        ),
+      );
+      expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.largeContentWidth);
     });
   });
 
@@ -704,6 +725,91 @@ void main() {
       await tester.tap(find.byTooltip('Dismiss'));
       await tester.pumpAndSettle();
       expect(find.text('Failed to delete bill'), findsNothing);
+    });
+  });
+
+  group('ThemeModeController', () {
+    test('follows the system until a choice is saved, and forgets it when back to the system look', () async {
+      SharedPreferences.setMockInitialValues({});
+      final controller = await ThemeModeController.load();
+      expect(controller.value, ThemeMode.system);
+
+      await controller.toggle(shown: Brightness.light, platform: Brightness.light);
+      expect(controller.value, ThemeMode.dark);
+      expect((await SharedPreferences.getInstance()).getString(ThemeModeController.prefsKey), 'dark');
+      expect((await ThemeModeController.load()).value, ThemeMode.dark, reason: 'kept across reloads');
+
+      await controller.toggle(shown: Brightness.dark, platform: Brightness.light);
+      expect(controller.value, ThemeMode.system);
+      expect((await SharedPreferences.getInstance()).getString(ThemeModeController.prefsKey), isNull);
+
+      await controller.toggle(shown: Brightness.dark, platform: Brightness.dark);
+      expect(controller.value, ThemeMode.light);
+    });
+
+    testWidgets('ThemeModeButton switches the app theme', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final controller = ThemeModeController();
+      await tester.pumpWidget(
+        ThemeModeScope(
+          controller: controller,
+          child: Builder(
+            builder: (context) => MaterialApp(
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: ThemeModeScope.of(context).value,
+              home: const Scaffold(body: RailBrand(label: 'M18 Admin', extended: true)),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('M18 Admin'), findsOneWidget);
+      expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Switch to dark mode'));
+      await tester.pumpAndSettle();
+      expect(controller.value, ThemeMode.dark);
+      expect(Theme.of(tester.element(find.text('M18 Admin'))).brightness, Brightness.dark);
+      expect(find.byTooltip('Switch to light mode'), findsOneWidget);
+    });
+  });
+
+  group('modal look', () {
+    testWidgets('the close button is a 48 px target named Close', (tester) async {
+      var closed = 0;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Center(child: CloseCircleButton(onPressed: () => closed++)),
+          ),
+        ),
+      );
+      expect(tester.getSize(find.byType(CloseCircleButton)), const Size(48, 48));
+      await tester.tap(find.byTooltip('Close'));
+      expect(closed, 1);
+    });
+
+    testWidgets('AppModalSection shows its label above the content', (tester) async {
+      await tester.pumpWidget(
+        app(
+          const Scaffold(
+            body: AppModalSection(label: 'Files', child: Text('receipt row')),
+          ),
+        ),
+      );
+      expect(find.text('Files'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Files')).dy, lessThan(tester.getTopLeft(find.text('receipt row')).dy));
+    });
+
+    test('a disabled filled button stands out from the panel in both themes', () {
+      for (final theme in [AppTheme.light, AppTheme.dark]) {
+        final style = theme.filledButtonTheme.style!;
+        final background = style.backgroundColor!.resolve({WidgetState.disabled})!;
+        final border = style.side!.resolve({WidgetState.disabled})!;
+        expect(background, isNot(AppTheme.panelColor(theme.colorScheme)), reason: '${theme.brightness}');
+        expect(border.style, BorderStyle.solid, reason: 'outlined, so it reads as a button');
+        expect(style.backgroundColor!.resolve({}), isNull, reason: 'enabled colors stay Material defaults');
+      }
     });
   });
 }

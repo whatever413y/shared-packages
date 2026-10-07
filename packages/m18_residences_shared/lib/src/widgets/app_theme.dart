@@ -156,6 +156,16 @@ class AppTheme {
   /// The color of cards, sheets, the navigation bar/rail and inputs: white on light, a lifted slate on dark.
   static Color panelColor(ColorScheme scheme) => scheme.brightness == Brightness.light ? scheme.surfaceContainerLowest : scheme.surfaceContainerLow;
 
+  /// A panel inside a panel (e.g. a modal's sections): a step off [panelColor].
+  static Color softPanelColor(ColorScheme scheme) => scheme.brightness == Brightness.light ? scheme.surfaceContainerLow : scheme.surfaceContainer;
+
+  /// A modal's footer strip: a little darker than [panelColor].
+  static Color footerColor(ColorScheme scheme) => scheme.brightness == Brightness.light ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest;
+
+  /// A modal's header band: [tint] (the primary color by default) washed over [panelColor].
+  static Color modalBandColor(ColorScheme scheme, [Color? tint]) =>
+      Color.alphaBlend((tint ?? scheme.primary).withValues(alpha: scheme.brightness == Brightness.light ? 0.07 : 0.12), panelColor(scheme));
+
   static ThemeData _build(ColorScheme scheme, StatusColors status) {
     final panel = panelColor(scheme);
     final base = ThemeData(colorScheme: scheme, fontFamily: fontFamily);
@@ -202,8 +212,22 @@ class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1, space: 1),
+      // A disabled filled button (e.g. Save before anything changed) stays visibly a button in both themes; enabled
+      // colors are left to Material (null), so FilledButton.styleFrom and tonal buttons keep theirs.
       filledButtonTheme: FilledButtonThemeData(
-        style: ButtonStyle(shape: buttonShape, textStyle: buttonText, minimumSize: buttonSize, padding: buttonPadding),
+        style: ButtonStyle(
+          shape: buttonShape,
+          textStyle: buttonText,
+          minimumSize: buttonSize,
+          padding: buttonPadding,
+          backgroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.disabled) ? scheme.surfaceContainerHighest : null),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled) ? scheme.onSurfaceVariant.withValues(alpha: 0.8) : null,
+          ),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled) ? BorderSide(color: scheme.outline.withValues(alpha: 0.5)) : null,
+          ),
+        ),
       ),
       // ElevatedButton looks like FilledButton: flat, brand colored.
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -214,10 +238,13 @@ class AppTheme {
           padding: buttonPadding,
           elevation: WidgetStateProperty.all(0),
           backgroundColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.disabled) ? scheme.onSurface.withValues(alpha: 0.12) : scheme.primary,
+            (states) => states.contains(WidgetState.disabled) ? scheme.surfaceContainerHighest : scheme.primary,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.disabled) ? scheme.onSurface.withValues(alpha: 0.38) : scheme.onPrimary,
+            (states) => states.contains(WidgetState.disabled) ? scheme.onSurfaceVariant.withValues(alpha: 0.8) : scheme.onPrimary,
+          ),
+          side: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled) ? BorderSide(color: scheme.outline.withValues(alpha: 0.5)) : null,
           ),
         ),
       ),

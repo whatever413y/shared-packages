@@ -141,8 +141,8 @@ void main() {
       expect((receipt.url, receipt.contentType, receipt.isPdf), ('https://api.test/api/files/x', 'application/pdf', true));
       expect(sent.last.url.toString(), '$base/signed-urls/receipts/JUAN%20DELA%20CRUZ/1727000000-r3');
 
-      await auth.signedPaymentUrl('gcash');
-      expect(sent.last.url.toString(), '$base/signed-urls/payments/gcash');
+      await auth.signedPaymentMethodUrl(4);
+      expect(sent.last.url.toString(), '$base/signed-urls/payment-methods/4');
 
       await auth.signedTenantPaymentUrl('JUAN DELA CRUZ', '1727000000-r3');
       expect(sent.last.url.toString(), '$base/signed-urls/tenant-payments/JUAN%20DELA%20CRUZ/1727000000-r3');
@@ -151,11 +151,11 @@ void main() {
     test('a signed URL without content_type is not a PDF; without url it throws', () async {
       var body = <String, dynamic>{'url': 'https://api.test/api/files/x'};
       final auth = AuthApi(client((_) async => json(body, 200)));
-      final file = await auth.signedPaymentUrl('gcash');
+      final file = await auth.signedPaymentMethodUrl(2);
       expect((file.contentType, file.isPdf), (null, false));
 
       body = {'content_type': 'image/png'};
-      await expectLater(auth.signedPaymentUrl('gcash'), throwsA(isA<ApiException>()));
+      await expectLater(auth.signedPaymentMethodUrl(2), throwsA(isA<ApiException>()));
     });
   });
 
@@ -243,32 +243,55 @@ void main() {
   });
 
   group('PaymentApi', () {
-    test('list reads the payment images', () async {
-      final payments = PaymentApi(
-        client(
-          (_) async => json([
-            {'name': 'gcash', 'key': 'payments/gcash.png', 'exists': true},
-          ], 200),
-        ),
-      );
-      final images = await payments.list();
-      expect(sent.single.url.path, '/api/payments');
-      expect((images.single.name, images.single.key, images.single.exists), ('gcash', 'payments/gcash.png', true));
+    const gcash = {'id': 2, 'name': 'GCash', 'account_name': 'M18', 'account_number': '0900', 'sort_order': 2, 'has_image': true};
+
+    test('list reads the payment methods', () async {
+      final payments = PaymentApi(client((_) async => json([gcash], 200)));
+      final methods = await payments.list();
+      expect(sent.single.url.path, '/api/payment-methods');
+      final m = methods.single;
+      expect((m.id, m.name, m.slug, m.accountName, m.accountNumber, m.sortOrder, m.hasImage), (2, 'GCash', 'gcash', 'M18', '0900', 2, true));
     });
 
-    test('upload sends the PNG as the multipart file part', () async {
-      SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
-      final payments = PaymentApi(client((_) async => json({'name': 'gcash', 'key': 'payments/gcash.png', 'exists': true}, 200)));
+    test('create, update and delete send the request bodies', () async {
+      final payments = PaymentApi(
+        client((request) async => request.method == 'DELETE' ? http.Response('', 204) : json(gcash, request.method == 'POST' ? 201 : 200)),
+      );
+      await payments.create(const PaymentMethodRequest(name: 'GCash', accountName: 'M18', accountNumber: '0900'));
+      expect((sent.last.method, sent.last.url.path), ('POST', '/api/payment-methods'));
+      expect(jsonDecode(sent.last.body), {'name': 'GCash', 'account_name': 'M18', 'account_number': '0900'});
 
-      final image = await payments.upload('gcash', [1, 2, 3]);
+      await payments.update(2, const PaymentMethodRequest(name: 'GCash', sortOrder: 5));
+      expect((sent.last.method, sent.last.url.path), ('PUT', '/api/payment-methods/2'));
+      expect(jsonDecode(sent.last.body), {'name': 'GCash', 'account_name': null, 'account_number': null, 'sort_order': 5});
+
+      await payments.delete(2);
+      expect((sent.last.method, sent.last.url.path), ('DELETE', '/api/payment-methods/2'));
+    });
+
+    test('uploadImage sends the PNG as the multipart file part; deleteImage removes it', () async {
+      SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
+      final payments = PaymentApi(client((_) async => json(gcash, 200)));
+
+      final method = await payments.uploadImage(2, [1, 2, 3]);
 
       final upload = sent.single;
-      expect((upload.method, upload.url.path), ('PUT', '/api/payments/gcash'));
+      expect((upload.method, upload.url.path), ('PUT', '/api/payment-methods/2/image'));
       expect(upload.headers['Authorization'], 'Bearer abc');
       final body = latin1.decode(upload.bodyBytes);
-      expect(body, contains('name="file"; filename="gcash.png"'));
+      expect(body, contains('name="file"; filename="qr.png"'));
       expect(body, contains('content-type: image/png'));
-      expect(image.exists, isTrue);
+      expect(method.hasImage, isTrue);
+
+      await payments.deleteImage(2);
+      expect((sent.last.method, sent.last.url.path), ('DELETE', '/api/payment-methods/2/image'));
+    });
+
+    test('slugs match the server', () {
+      PaymentMethod named(String name) => PaymentMethod(id: 1, name: name, sortOrder: 1, hasImage: false);
+      expect(named('GCash').slug, 'gcash');
+      expect(named('  Union Bank (Savings) ').slug, 'union-bank-savings');
+      expect(named('Maya!').slug, 'maya');
     });
   });
 

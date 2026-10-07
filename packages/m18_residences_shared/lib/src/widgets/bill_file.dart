@@ -33,7 +33,22 @@ class BillFileButton extends StatelessWidget {
   /// Typically `AuthApi.signedReceiptUrl` or `AuthApi.signedTenantPaymentUrl`.
   final Future<SignedFile> Function(String tenantName, String filename) fetchSignedFile;
 
-  const BillFileButton({super.key, required this.kind, required this.tenantName, required this.fileUrl, required this.fetchSignedFile});
+  /// A round icon button (tooltip "View receipt"/"View payment") instead of the labeled one, for dense tables.
+  final bool iconOnly;
+
+  /// The button's text instead of "View receipt"/"View payment" (e.g. "View" in a row that names the file); the full
+  /// name is then its tooltip.
+  final String? label;
+
+  const BillFileButton({
+    super.key,
+    required this.kind,
+    required this.tenantName,
+    required this.fileUrl,
+    required this.fetchSignedFile,
+    this.iconOnly = false,
+    this.label,
+  });
 
   /// Characters file systems refuse in a saved file's name.
   static final _unsafe = RegExp(r'[\\/:*?"<>|]');
@@ -46,18 +61,21 @@ class BillFileButton extends StatelessWidget {
 
     final subject = kind.subject;
     final title = '${subject[0].toUpperCase()}${subject.substring(1)}';
-    return OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-      onPressed: () => SignedImageDialog.show(
-        context,
-        fetchFile: () => fetchSignedFile(name, url),
-        subject: subject,
-        fileName: '$title · $name',
-        saveName: '$subject-$name-$url'.replaceAll(_unsafe, '_'),
-      ),
-      icon: Icon(kind.icon),
-      label: Text('View $subject'),
+    void open() => SignedImageDialog.show(
+      context,
+      fetchFile: () => fetchSignedFile(name, url),
+      subject: subject,
+      fileName: '$title · $name',
+      saveName: '$subject-$name-$url'.replaceAll(_unsafe, '_'),
     );
+    if (iconOnly) return IconButton(tooltip: 'View $subject', onPressed: open, icon: Icon(kind.icon));
+    final button = OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+      onPressed: open,
+      icon: Icon(kind.icon),
+      label: Text(label ?? 'View $subject'),
+    );
+    return label == null ? button : Tooltip(message: 'View $subject', child: button);
   }
 }
 

@@ -83,3 +83,21 @@ class BillRequest {
     'receipt_url': ?receiptUrl,
   };
 }
+
+/// The body of `POST /api/payment-methods` and `PUT /api/payment-methods/{id}`. Blank account fields are cleared;
+/// without [sortOrder], a new method goes last and an edited one keeps its place.
+class PaymentMethodRequest {
+  final String name;
+  final String? accountName;
+  final String? accountNumber;
+  final int? sortOrder;
+
+  const PaymentMethodRequest({required this.name, this.accountName, this.accountNumber, this.sortOrder});
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'account_name': accountName,
+    'account_number': accountNumber,
+    if (sortOrder != null) 'sort_order': sortOrder,
+  };
+}

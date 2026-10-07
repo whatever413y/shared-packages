@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'close_button.dart';
 import 'responsive.dart';
 
 enum ToastType { success, error, info, loading }
@@ -186,7 +187,7 @@ class _ToastCardState extends State<_ToastCard> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                IconButton(tooltip: 'Dismiss', icon: const Icon(Icons.close, size: 18), onPressed: close),
+                CloseCircleButton(tooltip: 'Dismiss', size: 28, onPressed: close),
               ],
             ),
           ),

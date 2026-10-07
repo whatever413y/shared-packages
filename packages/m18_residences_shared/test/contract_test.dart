@@ -54,10 +54,10 @@ void main() {
   group('API layer accepts the real server responses', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 
-    ApiClient serving(String name, {String subjectKey = 'admin_id'}) => ApiClient(
+    ApiClient serving(String name, {String subjectKey = 'admin_id', int status = 200}) => ApiClient(
       tokens: TokenStore(subjectKey),
       baseUrl: 'http://api.test/api',
-      httpClient: MockClient((_) async => http.Response(fixture(name), 200, headers: {'content-type': 'application/json'})),
+      httpClient: MockClient((_) async => http.Response(fixture(name), status, headers: {'content-type': 'application/json'})),
     );
 
     test('admin login', () async {
@@ -76,17 +76,25 @@ void main() {
     });
 
     test('signed URL', () async {
-      final file = await AuthApi(serving('signed_url.json')).signedPaymentUrl('gcash');
+      final file = await AuthApi(serving('signed_url.json')).signedPaymentMethodUrl(4);
       expect((file.url, file.contentType), ('<signed-url>', 'image/png'));
     });
 
-    test('payment images', () async {
-      final images = await PaymentApi(serving('payments.json')).list();
-      expect(images.map((p) => (p.name, p.key, p.exists)), [
-        ('bpi', 'payments/bpi.png', false),
-        ('gcash', 'payments/gcash.png', true),
-        ('maya', 'payments/maya.png', false),
+    test('payment methods', () async {
+      final methods = await PaymentApi(serving('payment_methods.json')).list();
+      expect(methods.map((m) => (m.id, m.name, m.slug, m.sortOrder, m.hasImage)), [
+        (1, 'BPI', 'bpi', 1, true),
+        (2, 'GCash', 'gcash', 2, true),
+        (3, 'Maya', 'maya', 3, true),
+        (4, 'Test Bank', 'test-bank', 4, true),
       ]);
+      expect((methods.first.accountName, methods.first.accountNumber), (null, null));
+      expect((methods.last.accountName, methods.last.accountNumber), ('Test Owner', '0000 1111 2222'));
+    });
+
+    test('a created payment method', () async {
+      final method = await PaymentApi(serving('payment_method.json', status: 201)).create(const PaymentMethodRequest(name: 'Test Bank'));
+      expect((method.id, method.name, method.accountName, method.hasImage), (4, 'Test Bank', 'Test Owner', false));
     });
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme_mode.dart';
+
 /// A section heading: [title] (and an optional [subtitle]) with an optional [trailing] action on the same line.
 class AppSection extends StatelessWidget {
   final String title;
@@ -102,6 +104,28 @@ class BrandMark extends StatelessWidget {
         Flexible(
           child: Text(label!, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
         ),
+      ],
+    );
+  }
+}
+
+/// The rail header of both apps: the logo with the app's [label] and the light/dark switch beside it on the extended
+/// rail, the logo above the switch on the narrow one. Needs a [ThemeModeScope].
+class RailBrand extends StatelessWidget {
+  final String label;
+  final bool extended;
+
+  const RailBrand({super.key, required this.label, required this.extended});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!extended) {
+      return const Column(mainAxisSize: MainAxisSize.min, children: [BrandMark(), SizedBox(height: 4), ThemeModeButton()]);
+    }
+    return Row(
+      children: [
+        Expanded(child: BrandMark(label: label)),
+        const ThemeModeButton(),
       ],
     );
   }
