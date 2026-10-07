@@ -53,7 +53,8 @@ Future<Uint8List> prepareQrPng(Uint8List bytes) async {
     throw const ReceiptException('Unsupported file: pick an image (JPEG, PNG, WebP, GIF, AVIF, HEIC)');
   }
   final bitmap = type == 'image/heic' ? await _decodeHeic(bytes) : await _decode(bytes, type);
-  final (encoded, _) = await _encode(bitmap, maxEdge: _qrMaxEdge, type: 'image/png');
+  // On white: a transparent QR code would vanish on a dark panel, and scanners need the light quiet zone.
+  final (encoded, _) = await _encode(bitmap, maxEdge: _qrMaxEdge, type: 'image/png', background: 'white');
   if (encoded.length > maxQrBytes) throw const ReceiptException('The QR image is still larger than 2 MB as PNG; crop it to the QR code');
   return encoded;
 }
@@ -102,12 +103,17 @@ Future<void> _loadHeicDecoder() {
 
 /// Draws [bitmap] at most [maxEdge] px on its long edge and encodes it as [type]; WebP falls back to JPEG
 /// where the browser can't write WebP.
-Future<(Uint8List, String)> _encode(web.ImageBitmap bitmap, {required int maxEdge, required String type}) async {
+/// Draws [bitmap] scaled to at most [maxEdge] px on its long edge (on [background] first, when given) and encodes it.
+Future<(Uint8List, String)> _encode(web.ImageBitmap bitmap, {required int maxEdge, required String type, String? background}) async {
   final scale = math.min(1.0, maxEdge / math.max(bitmap.width, bitmap.height));
   final width = math.max(1, (bitmap.width * scale).round());
   final height = math.max(1, (bitmap.height * scale).round());
   final canvas = web.OffscreenCanvas(width, height);
   final context = canvas.getContext('2d') as web.OffscreenCanvasRenderingContext2D;
+  if (background != null) {
+    context.fillStyle = background.toJS;
+    context.fillRect(0, 0, width, height);
+  }
   context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 

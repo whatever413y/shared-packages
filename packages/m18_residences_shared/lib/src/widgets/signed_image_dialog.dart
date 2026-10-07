@@ -4,6 +4,10 @@ import '../api/api_exception.dart';
 import '../models/signed_file.dart';
 import '../web/open_url.dart';
 import '../web/save_file.dart';
+import 'app_theme.dart';
+import 'close_button.dart';
+import 'modal.dart';
+import 'responsive.dart';
 import 'selectable.dart';
 
 /// Dialog showing a file behind a short-lived signed link; the link is fetched once when the dialog opens.
@@ -76,26 +80,31 @@ class _SignedImageDialogState extends State<SignedImageDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final compact = context.windowSize.isCompact;
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
-      child: FutureBuilder<SignedFile>(
-        future: _file,
-        builder: (context, snapshot) {
-          final file = snapshot.connectionState == ConnectionState.done && !snapshot.hasError ? snapshot.data : null;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _header(context, file),
-              if (_saveError != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(_saveError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                ),
-              Flexible(child: _body(context, snapshot)),
-            ],
-          );
-        },
+      insetPadding: compact ? const EdgeInsets.all(12) : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: FutureBuilder<SignedFile>(
+          future: _file,
+          builder: (context, snapshot) {
+            final file = snapshot.connectionState == ConnectionState.done && !snapshot.hasError ? snapshot.data : null;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _header(context, file),
+                if (_saveError != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: Text(_saveError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
+                Flexible(child: _body(context, snapshot)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -103,31 +112,50 @@ class _SignedImageDialogState extends State<SignedImageDialog> {
   Widget _header(BuildContext context, SignedFile? file) {
     final subject = widget.subject;
     final title = widget.fileName ?? '${subject[0].toUpperCase()}${subject.substring(1)}';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
-      child: Row(
-        children: [
-          Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
-          Semantics(
-            container: true,
-            identifier: 'signed-file-save',
-            child: IconButton(
-              tooltip: 'Save',
-              onPressed: file == null || _saving ? null : () => _save(file),
-              icon: _saving ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.download),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    // The same header band as AppModal.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppTheme.modalBandColor(scheme),
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
+        child: Row(
+          children: [
+            AppModal.icon(context, file?.isPdf ?? false ? Icons.picture_as_pdf_outlined : Icons.image_outlined),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Open in new tab',
-            onPressed: file == null ? null : () => widget.openUrl(file.url),
-            icon: const Icon(Icons.open_in_new),
-          ),
-          Semantics(
-            container: true,
-            identifier: 'signed-file-close',
-            child: IconButton(tooltip: 'Close', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
-          ),
-        ],
+            Semantics(
+              container: true,
+              identifier: 'signed-file-save',
+              child: IconButton(
+                tooltip: 'Save',
+                onPressed: file == null || _saving ? null : () => _save(file),
+                icon: _saving ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.download),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Open in new tab',
+              onPressed: file == null ? null : () => widget.openUrl(file.url),
+              icon: const Icon(Icons.open_in_new),
+            ),
+            const SizedBox(width: 4),
+            Semantics(
+              container: true,
+              identifier: 'signed-file-close',
+              child: CloseCircleButton(onPressed: () => Navigator.of(context).pop()),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -163,11 +191,15 @@ class _SignedImageDialogState extends State<SignedImageDialog> {
       );
     }
     final size = MediaQuery.sizeOf(context);
-    return Padding(
+    // The image on a neutral panel (receipts and QR codes are mostly white); pinch or scroll to zoom.
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.all(8),
       child: InteractiveViewer(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: size.width * 0.9, maxHeight: size.height * 0.8),
+          constraints: BoxConstraints(maxWidth: size.width * 0.9, maxHeight: size.height * 0.75),
           child: Image.network(
             file.url,
             fit: BoxFit.contain,

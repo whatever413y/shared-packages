@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:m18_residences_shared/m18_residences_shared.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget app(Widget home, {void Function(BuildContext)? onLogout}) {
   final material = MaterialApp(theme: AppTheme.light, home: home);
@@ -409,12 +410,16 @@ void main() {
   });
 
   group('responsive', () {
-    test('WindowSize.fromWidth uses the 600 / 1024 breakpoints', () {
+    test('WindowSize.fromWidth uses the 600 / 1024 / 1600 breakpoints', () {
       expect(WindowSize.fromWidth(360), WindowSize.compact);
       expect(WindowSize.fromWidth(599), WindowSize.compact);
       expect(WindowSize.fromWidth(600), WindowSize.medium);
       expect(WindowSize.fromWidth(1023), WindowSize.medium);
       expect(WindowSize.fromWidth(1024), WindowSize.expanded);
+      expect(WindowSize.fromWidth(1599), WindowSize.expanded);
+      expect(WindowSize.fromWidth(1600), WindowSize.large);
+      expect(WindowSize.large.isExpanded, isTrue, reason: 'large windows keep the expanded layout');
+      expect((WindowSize.expanded.contentMaxWidth, WindowSize.large.contentMaxWidth), (1200, 1600));
     });
 
     Future<void> pumpAt(WidgetTester tester, double width, Widget child) async {
@@ -424,7 +429,12 @@ void main() {
       await tester.pumpWidget(app(child));
     }
 
-    for (final (width, expected) in [(360.0, 'compact'), (800.0, 'medium'), (1440.0, 'expanded')]) {
+    for (final (width, expected, built) in [
+      (360.0, 'compact', 'compact'),
+      (800.0, 'medium', 'medium'),
+      (1440.0, 'expanded', 'expanded'),
+      (1920.0, 'large', 'expanded'),
+    ]) {
       testWidgets('ResponsiveBuilder and context.windowSize pick $expected at $width px', (tester) async {
         await pumpAt(
           tester,
@@ -443,7 +453,7 @@ void main() {
           ),
         );
         expect(find.text('window: $expected'), findsOneWidget);
-        expect(find.text(expected), findsOneWidget);
+        expect(find.text(built), findsOneWidget);
       });
     }
 
@@ -461,6 +471,17 @@ void main() {
         ),
       );
       expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.maxContentWidth);
+    });
+
+    testWidgets('ResponsiveCenter lets content grow to 1600 px on large screens', (tester) async {
+      await pumpAt(
+        tester,
+        2560,
+        const ResponsiveCenter(
+          child: SizedBox(key: Key('content'), width: double.infinity, height: 10),
+        ),
+      );
+      expect(tester.getSize(find.byKey(const Key('content'))).width, WindowSize.largeContentWidth);
     });
   });
 
@@ -602,5 +623,193 @@ void main() {
     expect(find.bySemanticsLabel('M18 Residences logo'), findsOneWidget);
     final paint = find.descendant(of: find.byType(BrandMark), matching: find.byType(CustomPaint)).first;
     expect(tester.getSize(paint), const Size(40, 40));
+  });
+
+  group('showAppModal', () {
+    Future<void> openAt(WidgetTester tester, double width) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showAppModal<void>(
+                  context,
+                  builder: (_) => AppModal(
+                    title: 'New Room',
+                    actions: [FilledButton(onPressed: () {}, child: const Text('Save'))],
+                    child: const Text('form'),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a centered dialog on wide windows, with one Close', (tester) async {
+      await openAt(tester, 1440);
+      expect(find.byType(Dialog), findsOneWidget);
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('New Room'), findsOneWidget);
+      expect(find.byTooltip('Close'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(find.text('form'), findsNothing);
+    });
+
+    testWidgets('a bottom sheet on phones, its text selectable', (tester) async {
+      await openAt(tester, 390);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.ancestor(of: find.text('form'), matching: find.byType(SelectionArea)), findsWidgets);
+      expect(find.text('Save'), findsOneWidget);
+    });
+  });
+
+  group('AppToast', () {
+    Future<BuildContext> pumpHost(WidgetTester tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (c) {
+                context = c;
+                return const SizedBox.expand();
+              },
+            ),
+          ),
+        ),
+      );
+      return context;
+    }
+
+    testWidgets('success closes by itself after a few seconds', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Bill created', type: ToastType.success);
+      // Not pumpAndSettle: the progress line animates until the toast closes.
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Bill created'), findsOneWidget);
+      final semantics = tester.widget<Semantics>(find.ancestor(of: find.text('Bill created'), matching: find.byType(Semantics)).first);
+      expect(semantics.properties.liveRegion, isTrue);
+      await tester.pump(AppToast.autoClose);
+      await tester.pumpAndSettle();
+      expect(find.text('Bill created'), findsNothing);
+    });
+
+    testWidgets('a new toast replaces the current one', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Creating bill...', type: ToastType.loading);
+      await tester.pump(const Duration(milliseconds: 300));
+      AppToast.show(context, 'Bill created', type: ToastType.success);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Creating bill...'), findsNothing);
+      expect(find.text('Bill created'), findsOneWidget);
+      AppToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.text('Bill created'), findsNothing);
+    });
+
+    testWidgets('errors stay until dismissed', (tester) async {
+      final context = await pumpHost(tester);
+      AppToast.show(context, 'Failed to delete bill', type: ToastType.error);
+      await tester.pump(const Duration(seconds: 30));
+      expect(find.text('Failed to delete bill'), findsOneWidget);
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pumpAndSettle();
+      expect(find.text('Failed to delete bill'), findsNothing);
+    });
+  });
+
+  group('ThemeModeController', () {
+    test('follows the system until a choice is saved, and forgets it when back to the system look', () async {
+      SharedPreferences.setMockInitialValues({});
+      final controller = await ThemeModeController.load();
+      expect(controller.value, ThemeMode.system);
+
+      await controller.toggle(shown: Brightness.light, platform: Brightness.light);
+      expect(controller.value, ThemeMode.dark);
+      expect((await SharedPreferences.getInstance()).getString(ThemeModeController.prefsKey), 'dark');
+      expect((await ThemeModeController.load()).value, ThemeMode.dark, reason: 'kept across reloads');
+
+      await controller.toggle(shown: Brightness.dark, platform: Brightness.light);
+      expect(controller.value, ThemeMode.system);
+      expect((await SharedPreferences.getInstance()).getString(ThemeModeController.prefsKey), isNull);
+
+      await controller.toggle(shown: Brightness.dark, platform: Brightness.dark);
+      expect(controller.value, ThemeMode.light);
+    });
+
+    testWidgets('ThemeModeButton switches the app theme', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final controller = ThemeModeController();
+      await tester.pumpWidget(
+        ThemeModeScope(
+          controller: controller,
+          child: Builder(
+            builder: (context) => MaterialApp(
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: ThemeModeScope.of(context).value,
+              home: const Scaffold(body: RailBrand(label: 'M18 Admin', extended: true)),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('M18 Admin'), findsOneWidget);
+      expect(find.byTooltip('Switch to dark mode'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Switch to dark mode'));
+      await tester.pumpAndSettle();
+      expect(controller.value, ThemeMode.dark);
+      expect(Theme.of(tester.element(find.text('M18 Admin'))).brightness, Brightness.dark);
+      expect(find.byTooltip('Switch to light mode'), findsOneWidget);
+    });
+  });
+
+  group('modal look', () {
+    testWidgets('the close button is a 48 px target named Close', (tester) async {
+      var closed = 0;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Center(child: CloseCircleButton(onPressed: () => closed++)),
+          ),
+        ),
+      );
+      expect(tester.getSize(find.byType(CloseCircleButton)), const Size(48, 48));
+      await tester.tap(find.byTooltip('Close'));
+      expect(closed, 1);
+    });
+
+    testWidgets('AppModalSection shows its label above the content', (tester) async {
+      await tester.pumpWidget(
+        app(
+          const Scaffold(
+            body: AppModalSection(label: 'Files', child: Text('receipt row')),
+          ),
+        ),
+      );
+      expect(find.text('Files'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Files')).dy, lessThan(tester.getTopLeft(find.text('receipt row')).dy));
+    });
+
+    test('a disabled filled button stands out from the panel in both themes', () {
+      for (final theme in [AppTheme.light, AppTheme.dark]) {
+        final style = theme.filledButtonTheme.style!;
+        final background = style.backgroundColor!.resolve({WidgetState.disabled})!;
+        final border = style.side!.resolve({WidgetState.disabled})!;
+        expect(background, isNot(AppTheme.panelColor(theme.colorScheme)), reason: '${theme.brightness}');
+        expect(border.style, BorderStyle.solid, reason: 'outlined, so it reads as a button');
+        expect(style.backgroundColor!.resolve({}), isNull, reason: 'enabled colors stay Material defaults');
+      }
+    });
   });
 }

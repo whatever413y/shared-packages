@@ -91,8 +91,8 @@ class AuthApi {
   Future<SignedFile> signedTenantPaymentUrl(String tenantName, String filename) =>
       _signedFile('/signed-urls/tenant-payments/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
 
-  /// Short-lived link to a payment QR image (`payments/<name>.png`).
-  Future<SignedFile> signedPaymentUrl(String name) => _signedFile('/signed-urls/payments/${Uri.encodeComponent(name)}');
+  /// Short-lived link to a payment method's QR image (404 when it has none).
+  Future<SignedFile> signedPaymentMethodUrl(int id) => _signedFile('/signed-urls/payment-methods/$id');
 
   Future<SignedFile> _signedFile(String path) async {
     final data = await _client.get(path) as Map<String, dynamic>;

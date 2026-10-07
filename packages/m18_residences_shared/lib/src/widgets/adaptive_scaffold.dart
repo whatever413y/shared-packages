@@ -159,7 +159,12 @@ class AdaptiveScaffold extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text('More', style: Theme.of(sheetContext).textTheme.titleLarge),
+              ),
               for (var i = first; i < destinations.length; i++)
                 Semantics(
                   button: true,
