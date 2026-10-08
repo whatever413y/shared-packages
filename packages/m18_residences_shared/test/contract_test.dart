@@ -75,6 +75,10 @@ void main() {
       expect((await BillApi(serving('latest_bill.json')).latestForTenant(1))!.totalAmount, 6050);
     });
 
+    test('bill years', () async {
+      expect(await BillApi(serving('bill_years.json')).years(), [2026]);
+    });
+
     test('signed URL', () async {
       final file = await AuthApi(serving('signed_url.json')).signedPaymentMethodUrl(4);
       expect((file.url, file.contentType), ('<signed-url>', 'image/png'));

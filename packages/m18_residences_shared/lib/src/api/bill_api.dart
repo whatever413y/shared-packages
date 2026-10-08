@@ -11,7 +11,26 @@ class BillApi {
 
   BillApi(this._client);
 
-  Future<List<Bill>> list() async => _bills(await _client.get('/bills'));
+  /// Every bill, newest first; or only those matching every filter given: created on or after [since] **or**
+  /// without a receipt (every open bill), created in [year], of [tenantId], or with a reading in [roomId].
+  Future<List<Bill>> list({DateTime? since, int? year, int? tenantId, int? roomId}) async => _bills(
+    await _client.get(
+      '/bills',
+      query: {
+        if (since != null) 'since': _day(since),
+        if (year != null) 'year': '$year',
+        if (tenantId != null) 'tenant_id': '$tenantId',
+        if (roomId != null) 'room_id': '$roomId',
+      },
+    ),
+  );
+
+  /// The years bills were created in, newest first.
+  Future<List<int>> years() async => (await _client.get('/bills/years') as List<dynamic>).cast<int>();
+
+  /// `YYYY-MM-DD` of [date]'s calendar day.
+  static String _day(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
   Future<List<Bill>> listForTenant(int tenantId) async => _bills(await _client.get('/bills/$tenantId/bills'));
 

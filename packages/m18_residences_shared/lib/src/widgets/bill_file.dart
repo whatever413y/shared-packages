@@ -1,37 +1,34 @@
 import 'package:flutter/material.dart';
 
 import '../models/bill.dart';
+import '../models/bill_file_kind.dart';
 import '../models/signed_file.dart';
 import 'app_theme.dart';
 import 'signed_image_dialog.dart';
 
-/// The two files a bill can have.
-enum BillFileKind {
-  /// The owner's receipt (`receipts/<tenant name>/<file>`); makes the bill paid.
-  receipt('receipt', Icons.receipt_long),
-
-  /// The tenant's proof of payment (`tenant-payments/<tenant name>/<file>`).
-  payment('payment', Icons.payments_outlined);
-
-  /// Used in texts ("View receipt", "Error loading payment: ...") and saved file names.
-  final String subject;
-  final IconData icon;
-
-  const BillFileKind(this.subject, this.icon);
+/// The icon of each [BillFileKind].
+extension BillFileKindIcon on BillFileKind {
+  IconData get icon => switch (this) {
+    BillFileKind.receipt => Icons.receipt_long,
+    BillFileKind.payment => Icons.payments_outlined,
+  };
 }
 
-/// "View receipt" / "View payment" button that opens the file in a [SignedImageDialog] (images inline, PDFs in a
-/// new tab, Save in the header). No file name, key or link is shown. Renders nothing when there is no file (null or
-/// empty) or no tenant name.
+/// "View receipt" / "View payment" button that opens bill [billId]'s file in a [SignedImageDialog] (images inline,
+/// PDFs in a new tab, Save in the header). No file name, key or link is shown. Renders nothing when the bill has no
+/// such file ([fileUrl] null or empty).
 class BillFileButton extends StatelessWidget {
   final BillFileKind kind;
-  final String? tenantName;
+  final int billId;
 
-  /// The bill's `receiptUrl` or `paymentUrl` (a file name).
+  /// The bill's `receiptUrl` or `paymentUrl`: whether it has the file (and part of a saved file's name).
   final String? fileUrl;
 
-  /// Typically `AuthApi.signedReceiptUrl` or `AuthApi.signedTenantPaymentUrl`.
-  final Future<SignedFile> Function(String tenantName, String filename) fetchSignedFile;
+  /// The bill's tenant, for the dialog's title and the saved file's name (optional).
+  final String? tenantName;
+
+  /// Typically `AuthApi.signedBillFileUrl`.
+  final Future<SignedFile> Function(int billId, BillFileKind kind) fetchSignedFile;
 
   /// A round icon button (tooltip "View receipt"/"View payment") instead of the labeled one, for dense tables.
   final bool iconOnly;
@@ -43,9 +40,10 @@ class BillFileButton extends StatelessWidget {
   const BillFileButton({
     super.key,
     required this.kind,
-    required this.tenantName,
+    required this.billId,
     required this.fileUrl,
     required this.fetchSignedFile,
+    this.tenantName,
     this.iconOnly = false,
     this.label,
   });
@@ -56,17 +54,17 @@ class BillFileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = fileUrl;
-    final name = tenantName;
-    if (url == null || url.isEmpty || name == null) return const SizedBox.shrink();
+    if (url == null || url.isEmpty) return const SizedBox.shrink();
 
+    final name = tenantName;
     final subject = kind.subject;
     final title = '${subject[0].toUpperCase()}${subject.substring(1)}';
     void open() => SignedImageDialog.show(
       context,
-      fetchFile: () => fetchSignedFile(name, url),
+      fetchFile: () => fetchSignedFile(billId, kind),
       subject: subject,
-      fileName: '$title · $name',
-      saveName: '$subject-$name-$url'.replaceAll(_unsafe, '_'),
+      fileName: name == null ? title : '$title · $name',
+      saveName: '$subject-${name ?? 'bill-$billId'}-$url'.replaceAll(_unsafe, '_'),
     );
     if (iconOnly) return IconButton(tooltip: 'View $subject', onPressed: open, icon: Icon(kind.icon));
     final button = OutlinedButton.icon(

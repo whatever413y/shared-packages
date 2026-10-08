@@ -1,3 +1,10 @@
+## 0.9.0
+
+* **Breaking:** bill files are opened by bill id: `AuthApi.signedBillFileUrl(billId, kind)` replaces `signedReceiptUrl` and `signedTenantPaymentUrl`, so a renamed tenant or a bill moved to another tenant keeps its files. `BillFileButton` takes `billId` and a `fetchSignedFile(billId, kind)`; `tenantName` is now optional (the dialog's title and the saved file's name). `BillFileKind` moved to the models (`subject` only); its icon is the `BillFileKindIcon` extension, so `kind.icon` still works.
+* Logins: `adminLogin` and `tenantLogin` take an optional `turnstileToken`. The server's login guards map to `TooManyAttemptsException` (HTTP 429, too many attempts from this client) and `VerificationFailedException` (400: the captcha wasn't accepted; 503, `unavailable`: Cloudflare couldn't be reached).
+* Cloudflare Turnstile: `TurnstileField` (always visible, flexible width, 65 px high, light or dark with the app; test id `turnstile`) with a `TurnstileController` (`token`, single use: `reset()` after every attempt; `error` when the widget can't load). The site key is `TurnstileConfig.siteKey`, the build's `TURNSTILE_SITE_KEY` (a clear `StateError` when missing). The widget's script loads from challenges.cloudflare.com when a login page shows it.
+* Bills: `BillApi.list({since, year, tenantId, roomId})` (every filter given must match; `since` also returns every bill without a receipt) and `BillApi.years()`; `ApiClient.get` takes `query` parameters. Contract fixture `bill_years.json`.
+
 ## 0.8.0
 
 * Modals: `showAppModal` shows an `AppModal` as a bottom sheet on phones (lifted above the keyboard) and as a centered dialog on wider windows, its text selectable either way. `AppModal` has a tinted header band (`tint`, default the primary color; optional icon tile, overline, title, subtitle, trailing widget, and the only "Close" button, with the sheet's drag handle), a scrolling body and a footer strip for actions. `AppModalSection` groups a body's content under a label on a soft panel.

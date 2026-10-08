@@ -18,15 +18,19 @@ class ApiClient {
 
   String get baseUrl => _baseUrl ?? ApiConfig.baseUrl;
 
-  Uri uri(String path) => Uri.parse('$baseUrl$path');
+  /// The URL of [path], with [query] parameters when there are any.
+  Uri uri(String path, [Map<String, String>? query]) {
+    final url = Uri.parse('$baseUrl$path');
+    return query == null || query.isEmpty ? url : url.replace(queryParameters: query);
+  }
 
   Future<Map<String, String>> headers({bool json = true}) async {
     final token = await tokens.token();
     return {if (json) 'Content-Type': 'application/json', if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token'};
   }
 
-  Future<dynamic> get(String path, {Set<int> expected = const {200}}) async =>
-      _decode(await _http.get(uri(path), headers: await headers()), expected);
+  Future<dynamic> get(String path, {Map<String, String>? query, Set<int> expected = const {200}}) async =>
+      _decode(await _http.get(uri(path, query), headers: await headers()), expected);
 
   Future<dynamic> post(String path, {Object? body, Set<int> expected = const {200, 201}, Duration? timeout}) async {
     var request = _http.post(uri(path), headers: await headers(), body: body == null ? null : jsonEncode(body));

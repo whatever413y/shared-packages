@@ -91,6 +91,37 @@ void main() {
       await expectLater(auth.adminLogin('admin', 'wrong'), throwsA(isA<InvalidCredentialsException>()));
     });
 
+    test('logins send the Turnstile token only when there is one', () async {
+      final auth = AuthApi(
+        client(
+          (request) async =>
+              json(request.url.path.endsWith('admin-login') ? {'token': 't', 'username': 'admin'} : {'token': 't', 'tenant': tenantJson}, 200),
+        ),
+      );
+
+      await auth.adminLogin('admin', 'pw', turnstileToken: 'tok');
+      expect(jsonDecode(sent.last.body), {'username': 'admin', 'password': 'pw', 'turnstile_token': 'tok'});
+      await auth.tenantLogin('ana', turnstileToken: 'tok2');
+      expect(jsonDecode(sent.last.body), {'name': 'ana', 'turnstile_token': 'tok2'});
+      await auth.tenantLogin('ana');
+      expect(jsonDecode(sent.last.body), {'name': 'ana'});
+    });
+
+    test('logins map the guards: 429 too many attempts, 400/503 verification', () async {
+      var status = 429;
+      final auth = AuthApi(client((_) async => json({'error': 'x'}, status)));
+      for (final login in [() => auth.adminLogin('a', 'b'), () => auth.tenantLogin('ANA')]) {
+        status = 429;
+        await expectLater(login(), throwsA(isA<TooManyAttemptsException>()));
+        status = 400;
+        await expectLater(login(), throwsA(isA<VerificationFailedException>().having((e) => e.unavailable, 'unavailable', false)));
+        status = 503;
+        await expectLater(login(), throwsA(isA<VerificationFailedException>().having((e) => e.unavailable, 'unavailable', true)));
+        status = 500;
+        await expectLater(login(), throwsA(isA<ApiException>().having((e) => e.runtimeType, 'type', ApiException)));
+      }
+    });
+
     test('tenant login saves the token and tenant id', () async {
       final auth = AuthApi(client((_) async => json({'token': 't2', 'tenant': tenantJson}, 200), subjectKey: 'tenant_id'));
 
@@ -134,18 +165,18 @@ void main() {
       expect(await auth.tokens.subject(), isNull);
     });
 
-    test('signed URLs encode path segments and return the link and its type', () async {
+    test('signed URLs are by bill id and kind, and return the link and its type', () async {
       final auth = AuthApi(client((_) async => json({'url': 'https://api.test/api/files/x', 'content_type': 'application/pdf'}, 200)));
 
-      final receipt = await auth.signedReceiptUrl('JUAN DELA CRUZ', '1727000000-r3');
+      final receipt = await auth.signedBillFileUrl(7, BillFileKind.receipt);
       expect((receipt.url, receipt.contentType, receipt.isPdf), ('https://api.test/api/files/x', 'application/pdf', true));
-      expect(sent.last.url.toString(), '$base/signed-urls/receipts/JUAN%20DELA%20CRUZ/1727000000-r3');
+      expect(sent.last.url.toString(), '$base/signed-urls/bills/7/receipt');
+
+      await auth.signedBillFileUrl(7, BillFileKind.payment);
+      expect(sent.last.url.toString(), '$base/signed-urls/bills/7/payment');
 
       await auth.signedPaymentMethodUrl(4);
       expect(sent.last.url.toString(), '$base/signed-urls/payment-methods/4');
-
-      await auth.signedTenantPaymentUrl('JUAN DELA CRUZ', '1727000000-r3');
-      expect(sent.last.url.toString(), '$base/signed-urls/tenant-payments/JUAN%20DELA%20CRUZ/1727000000-r3');
     });
 
     test('a signed URL without content_type is not a PDF; without url it throws', () async {
@@ -167,6 +198,21 @@ void main() {
       expect(sent.last.url.path, '/api/bills/2/bills');
       expect((await bills.latestForTenant(2))!.id, 7);
       expect(sent.last.url.path, '/api/bills/2/bill');
+    });
+
+    test('list sends only the filters given; years are a list of ints', () async {
+      final bills = BillApi(client((request) async => json(request.url.path.endsWith('/years') ? [2026, 2025] : [billJson], 200)));
+
+      await bills.list();
+      expect(sent.last.url.toString(), '$base/bills');
+      await bills.list(since: DateTime(2025, 11, 1, 13, 45), tenantId: 2);
+      expect(sent.last.url.path, '/api/bills');
+      expect(sent.last.url.queryParameters, {'since': '2025-11-01', 'tenant_id': '2'});
+      await bills.list(year: 2024, roomId: 5);
+      expect(sent.last.url.queryParameters, {'year': '2024', 'room_id': '5'});
+
+      expect(await bills.years(), [2026, 2025]);
+      expect(sent.last.url.path, '/api/bills/years');
     });
 
     test('latestForTenant returns null when the tenant has no bill (404)', () async {

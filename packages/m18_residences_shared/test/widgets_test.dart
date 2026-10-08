@@ -178,14 +178,14 @@ void main() {
   });
 
   group('BillFileButton', () {
-    Future<SignedFile> neverCalled(String _, String _) => throw StateError('should not fetch');
+    Future<SignedFile> neverCalled(int _, BillFileKind _) => throw StateError('should not fetch');
 
-    testWidgets('renders nothing without a file (null or empty URL) or tenant name', (tester) async {
-      for (final (name, url) in [('ANA', null), ('ANA', ''), (null, '1727000000-r3')]) {
+    testWidgets('renders nothing without a file (null or empty URL)', (tester) async {
+      for (final url in [null, '']) {
         await tester.pumpWidget(
           app(
             Scaffold(
-              body: BillFileButton(kind: BillFileKind.receipt, tenantName: name, fileUrl: url, fetchSignedFile: neverCalled),
+              body: BillFileButton(kind: BillFileKind.receipt, billId: 7, tenantName: 'ANA', fileUrl: url, fetchSignedFile: neverCalled),
             ),
           ),
         );
@@ -193,18 +193,32 @@ void main() {
       }
     });
 
+    testWidgets('works without a tenant name', (tester) async {
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: BillFileButton(kind: BillFileKind.receipt, billId: 7, fileUrl: '1-r3', fetchSignedFile: (_, _) => Completer<SignedFile>().future),
+          ),
+        ),
+      );
+      await tester.tap(find.text('View receipt'));
+      await tester.pump();
+      expect(find.text('Receipt'), findsOneWidget);
+    });
+
     testWidgets('shows a View button, no file name, and opens a dialog with the fetch error', (tester) async {
-      final requested = <(String, String)>[];
+      final requested = <(int, BillFileKind)>[];
       final completer = Completer<SignedFile>();
       await tester.pumpWidget(
         app(
           Scaffold(
             body: BillFileButton(
               kind: BillFileKind.payment,
+              billId: 7,
               tenantName: 'ANA',
               fileUrl: '1727000000-r3',
-              fetchSignedFile: (name, file) {
-                requested.add((name, file));
+              fetchSignedFile: (id, kind) {
+                requested.add((id, kind));
                 return completer.future;
               },
             ),
@@ -217,7 +231,7 @@ void main() {
       await tester.tap(find.text('View payment'));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(requested, [('ANA', '1727000000-r3')]);
+      expect(requested, [(7, BillFileKind.payment)]);
       expect(find.text('Payment · ANA'), findsOneWidget);
 
       completer.completeError(const ApiException(404, '{"error":"Payment image not found"}'));
@@ -229,11 +243,37 @@ void main() {
       await tester.pumpWidget(
         app(
           Scaffold(
-            body: BillFileButton(kind: BillFileKind.receipt, tenantName: 'ANA', fileUrl: '1-r3', fetchSignedFile: neverCalled),
+            body: BillFileButton(kind: BillFileKind.receipt, billId: 7, tenantName: 'ANA', fileUrl: '1-r3', fetchSignedFile: neverCalled),
           ),
         ),
       );
       expect(find.text('View receipt'), findsOneWidget);
+    });
+  });
+
+  group('Turnstile', () {
+    test('the site key is required at build time', () {
+      expect(() => TurnstileConfig.siteKey, throwsStateError);
+    });
+
+    testWidgets('the field has its test id and the widget size; the controller starts without a token', (tester) async {
+      final controller = TurnstileController();
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: TurnstileField(controller: controller, action: 'tenant-login', siteKey: '1x00000000000000000000AA'),
+          ),
+        ),
+      );
+      final box = find.bySemanticsIdentifier('turnstile');
+      expect(box, findsOneWidget);
+      expect(tester.getSize(box).height, TurnstileField.height);
+      expect((controller.token, controller.error), (null, null));
+
+      var notified = 0;
+      controller.addListener(() => notified++);
+      controller.reset();
+      expect((controller.token, notified), (null, 1));
     });
   });
 

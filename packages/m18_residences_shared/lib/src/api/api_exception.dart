@@ -31,3 +31,17 @@ class InvalidCredentialsException extends ApiException {
 class TenantNotFoundException extends ApiException {
   const TenantNotFoundException(super.statusCode, super.body);
 }
+
+/// Too many login attempts from this client (HTTP 429); the server allows more after a minute.
+class TooManyAttemptsException extends ApiException {
+  const TooManyAttemptsException(super.statusCode, super.body);
+}
+
+/// The login's captcha (Cloudflare Turnstile) was not accepted (HTTP 400), or could not be checked right now
+/// ([unavailable], HTTP 503). Either way the widget needs a new token before the next try.
+class VerificationFailedException extends ApiException {
+  const VerificationFailedException(super.statusCode, super.body);
+
+  /// Cloudflare could not be reached: try again later rather than solve the check again.
+  bool get unavailable => statusCode == 503;
+}

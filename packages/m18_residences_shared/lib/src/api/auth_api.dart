@@ -1,5 +1,6 @@
-import '../models/tenant.dart';
+import '../models/bill_file_kind.dart';
 import '../models/signed_file.dart';
+import '../models/tenant.dart';
 import 'api_client.dart';
 import 'api_exception.dart';
 import 'token_store.dart';
@@ -28,14 +29,28 @@ class AuthApi {
 
   TokenStore get tokens => _client.tokens;
 
-  /// Throws [InvalidCredentialsException] on HTTP 401.
-  Future<AdminSession> adminLogin(String username, String password) async {
+  /// The login guards' answers, before the credentials are checked: 429 → [TooManyAttemptsException], 400 or 503
+  /// (the captcha) → [VerificationFailedException].
+  static ApiException? _guardError(ApiException e) => switch (e.statusCode) {
+    429 => TooManyAttemptsException(e.statusCode, e.body),
+    400 || 503 => VerificationFailedException(e.statusCode, e.body),
+    _ => null,
+  };
+
+  /// [turnstileToken] is the login widget's token (single use). Throws [InvalidCredentialsException] on HTTP 401,
+  /// [TooManyAttemptsException] on 429 and [VerificationFailedException] on 400/503.
+  Future<AdminSession> adminLogin(String username, String password, {String? turnstileToken}) async {
     final dynamic data;
     try {
-      data = await _client.post('/auth/admin-login', body: {'username': username, 'password': password}, expected: {200}, timeout: loginTimeout);
+      data = await _client.post(
+        '/auth/admin-login',
+        body: {'username': username, 'password': password, 'turnstile_token': ?turnstileToken},
+        expected: {200},
+        timeout: loginTimeout,
+      );
     } on ApiException catch (e) {
       if (e.statusCode == 401) throw InvalidCredentialsException(e.statusCode, e.body);
-      rethrow;
+      throw _guardError(e) ?? e;
     }
 
     final token = data['token'] as String?;
@@ -47,14 +62,16 @@ class AuthApi {
     return AdminSession(token: token, username: name);
   }
 
-  /// Tenants log in by name only. Throws [TenantNotFoundException] on HTTP 404.
-  Future<TenantSession> tenantLogin(String name) async {
+  /// Tenants log in by name only (any case). [turnstileToken] is the login widget's token (single use). Throws
+  /// [TenantNotFoundException] on HTTP 404, [TooManyAttemptsException] on 429 and [VerificationFailedException] on
+  /// 400/503.
+  Future<TenantSession> tenantLogin(String name, {String? turnstileToken}) async {
     final dynamic data;
     try {
-      data = await _client.post('/auth/login', body: {'name': name}, expected: {200}, timeout: loginTimeout);
+      data = await _client.post('/auth/login', body: {'name': name, 'turnstile_token': ?turnstileToken}, expected: {200}, timeout: loginTimeout);
     } on ApiException catch (e) {
       if (e.statusCode == 404) throw TenantNotFoundException(e.statusCode, e.body);
-      rethrow;
+      throw _guardError(e) ?? e;
     }
 
     final token = data['token'] as String?;
@@ -83,13 +100,8 @@ class AuthApi {
 
   Future<void> logout() => tokens.clear();
 
-  /// Short-lived link to a bill receipt stored under `receipts/<tenant name>/<filename>`.
-  Future<SignedFile> signedReceiptUrl(String tenantName, String filename) =>
-      _signedFile('/signed-urls/receipts/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
-
-  /// Short-lived link to a bill's payment image stored under `tenant-payments/<tenant name>/<filename>`.
-  Future<SignedFile> signedTenantPaymentUrl(String tenantName, String filename) =>
-      _signedFile('/signed-urls/tenant-payments/${Uri.encodeComponent(tenantName)}/${Uri.encodeComponent(filename)}');
+  /// Short-lived link to bill [billId]'s receipt or payment image, wherever it is stored (404 when it has none).
+  Future<SignedFile> signedBillFileUrl(int billId, BillFileKind kind) => _signedFile('/signed-urls/bills/$billId/${kind.subject}');
 
   /// Short-lived link to a payment method's QR image (404 when it has none).
   Future<SignedFile> signedPaymentMethodUrl(int id) => _signedFile('/signed-urls/payment-methods/$id');
