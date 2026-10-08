@@ -45,6 +45,9 @@ class TurnstileView extends StatefulWidget {
   final String siteKey;
   final String action;
   final bool dark;
+
+  /// Turnstile's compact size (150 × 140) instead of the flexible one.
+  final bool compact;
   final ValueChanged<String> onToken;
   final VoidCallback onExpired;
 
@@ -59,6 +62,7 @@ class TurnstileView extends StatefulWidget {
     required this.siteKey,
     required this.action,
     required this.dark,
+    required this.compact,
     required this.onToken,
     required this.onExpired,
     required this.onError,
@@ -76,7 +80,7 @@ class _TurnstileViewState extends State<TurnstileView> {
   @override
   void didUpdateWidget(TurnstileView old) {
     super.didUpdateWidget(old);
-    if (old.dark != widget.dark || old.siteKey != widget.siteKey) {
+    if (old.dark != widget.dark || old.compact != widget.compact || old.siteKey != widget.siteKey) {
       _remove();
       _render();
     }
@@ -114,7 +118,7 @@ class _TurnstileViewState extends State<TurnstileView> {
       ..['sitekey'] = widget.siteKey.toJS
       ..['action'] = widget.action.toJS
       ..['theme'] = (widget.dark ? 'dark' : 'light').toJS
-      ..['size'] = 'flexible'.toJS
+      ..['size'] = (widget.compact ? 'compact' : 'flexible').toJS
       ..['callback'] = ((JSString token) => widget.onToken(token.toDart)).toJS
       ..['expired-callback'] = (() => widget.onExpired()).toJS
       ..['error-callback'] = ((JSAny? code) {

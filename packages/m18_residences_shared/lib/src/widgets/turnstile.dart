@@ -47,7 +47,7 @@ class TurnstileController extends ChangeNotifier {
 }
 
 /// Cloudflare Turnstile's "Verify you are human" box (always shown; usually checks by itself, sometimes asks for a
-/// click), in the app's light or dark look. Its token lands in [controller]. Test id `turnstile`.
+/// click), in the app's light or dark look; full width, or Turnstile's compact size below [minFlexibleWidth]. Its token lands in [controller]. Test id `turnstile`.
 class TurnstileField extends StatelessWidget {
   final TurnstileController controller;
 
@@ -59,8 +59,12 @@ class TurnstileField extends StatelessWidget {
 
   const TurnstileField({super.key, required this.controller, required this.action, this.siteKey});
 
-  /// The widget's height in its flexible size (at least 300 px wide).
+  /// The widget's height in its flexible size (at least [minFlexibleWidth] wide).
   static const double height = 65;
+
+  /// Narrower than this, Turnstile's compact size is used (150 × [compactHeight]).
+  static const double minFlexibleWidth = 300;
+  static const double compactHeight = 140;
 
   @override
   Widget build(BuildContext context) {
@@ -69,22 +73,28 @@ class TurnstileField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Semantics(
-          container: true,
-          identifier: 'turnstile',
-          label: 'Human verification',
-          child: SizedBox(
-            height: height,
-            child: TurnstileView(
-              siteKey: siteKey ?? TurnstileConfig.siteKey,
-              action: action,
-              dark: theme.brightness == Brightness.dark,
-              onToken: (token) => controller._set(token: token),
-              onExpired: () => controller._set(),
-              onError: (code) => controller._set(error: code),
-              onReady: (reset) => controller._resetWidget = reset,
-            ),
-          ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < minFlexibleWidth;
+            return Semantics(
+              container: true,
+              identifier: 'turnstile',
+              label: 'Human verification',
+              child: SizedBox(
+                height: compact ? compactHeight : height,
+                child: TurnstileView(
+                  siteKey: siteKey ?? TurnstileConfig.siteKey,
+                  action: action,
+                  dark: theme.brightness == Brightness.dark,
+                  compact: compact,
+                  onToken: (token) => controller._set(token: token),
+                  onExpired: () => controller._set(),
+                  onError: (code) => controller._set(error: code),
+                  onReady: (reset) => controller._resetWidget = reset,
+                ),
+              ),
+            );
+          },
         ),
         ListenableBuilder(
           listenable: controller,

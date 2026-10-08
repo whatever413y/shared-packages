@@ -5,6 +5,9 @@ class TurnstileView extends StatelessWidget {
   final String siteKey;
   final String action;
   final bool dark;
+
+  /// Turnstile's compact size (150 × 140) instead of the flexible one.
+  final bool compact;
   final ValueChanged<String> onToken;
   final VoidCallback onExpired;
   final ValueChanged<String> onError;
@@ -15,6 +18,7 @@ class TurnstileView extends StatelessWidget {
     required this.siteKey,
     required this.action,
     required this.dark,
+    required this.compact,
     required this.onToken,
     required this.onExpired,
     required this.onError,

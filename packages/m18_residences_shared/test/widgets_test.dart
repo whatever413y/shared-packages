@@ -268,6 +268,21 @@ void main() {
       final box = find.bySemanticsIdentifier('turnstile');
       expect(box, findsOneWidget);
       expect(tester.getSize(box).height, TurnstileField.height);
+
+      // Narrower than Turnstile's flexible minimum: the compact size.
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 280,
+                child: TurnstileField(controller: controller, action: 'tenant-login', siteKey: '1x00000000000000000000AA'),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSize(find.bySemanticsIdentifier('turnstile')).height, TurnstileField.compactHeight);
       expect((controller.token, controller.error), (null, null));
 
       var notified = 0;
