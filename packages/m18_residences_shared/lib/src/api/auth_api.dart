@@ -29,6 +29,9 @@ class AuthApi {
 
   TokenStore get tokens => _client.tokens;
 
+  /// The shared client (e.g. to set [ApiClient.onSessionExpired]).
+  ApiClient get client => _client;
+
   /// The login guards' answers, before the credentials are checked: 429 → [TooManyAttemptsException], 400 or 503
   /// (the captcha) → [VerificationFailedException].
   static ApiException? _guardError(ApiException e) => switch (e.statusCode) {

@@ -22,6 +22,11 @@ class ApiException implements Exception {
   String toString() => 'ApiException($statusCode): $message';
 }
 
+/// A call outside `/auth/` answered 401: the login expired or is no longer valid ([ApiClient.onSessionExpired] ran).
+class SessionExpiredException extends ApiException {
+  const SessionExpiredException(super.statusCode, super.body);
+}
+
 /// Admin login rejected (HTTP 401).
 class InvalidCredentialsException extends ApiException {
   const InvalidCredentialsException(super.statusCode, super.body);

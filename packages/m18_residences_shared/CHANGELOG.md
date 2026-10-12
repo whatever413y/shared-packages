@@ -1,3 +1,9 @@
+## 0.10.0
+
+* Expired logins: a 401 on any call outside `/auth/` runs the new `ApiClient.onSessionExpired` callback and throws `SessionExpiredException` (an `ApiException`), so the apps can log out and open the login page. Logins and `validateToken` keep their own 401 handling. `AuthApi.client` exposes the shared client.
+* Readable errors: `readableError(e)` turns any error into one plain sentence (session ended, no access, file too large, too many attempts, server trouble, no connection, timeout, unexpected reply; other 4xx show the server's own message), and `describeError(action, e)` puts what failed before it. Both print the raw error to the console.
+* `InfoBanner`: a short notice above a form (the login page's "Your session has ended…"), announced to screen readers.
+
 ## 0.9.0
 
 * **Breaking:** bill files are opened by bill id: `AuthApi.signedBillFileUrl(billId, kind)` replaces `signedReceiptUrl` and `signedTenantPaymentUrl`, so a renamed tenant or a bill moved to another tenant keeps its files. `BillFileButton` takes `billId` and a `fetchSignedFile(billId, kind)`; `tenantName` is now optional (the dialog's title and the saved file's name). `BillFileKind` moved to the models (`subject` only); its icon is the `BillFileKindIcon` extension, so `kind.icon` still works.

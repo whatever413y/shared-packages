@@ -69,6 +69,24 @@ void main() {
       );
     });
 
+    test('a 401 outside /auth/ runs onSessionExpired and throws SessionExpiredException', () async {
+      final api = client((_) async => json({'error': 'Authentication required'}, 401));
+      var expired = 0;
+      api.onSessionExpired = () => expired++;
+
+      await expectLater(RoomApi(api).list(), throwsA(isA<SessionExpiredException>()));
+      await expectLater(api.put('/bills/1', body: {}), throwsA(isA<SessionExpiredException>()));
+      final upload = http.MultipartRequest('PUT', api.uri('/bills/1/upload'));
+      await expectLater(api.send(upload), throwsA(isA<SessionExpiredException>()));
+      expect(expired, 3);
+
+      // Logins and token checks handle their own 401s.
+      await expectLater(AuthApi(api).adminLogin('admin', 'wrong'), throwsA(isA<InvalidCredentialsException>()));
+      SharedPreferences.setMockInitialValues({'auth_token': 'abc'});
+      expect(await AuthApi(api).validateToken(), isFalse);
+      expect(expired, 3);
+    });
+
     test('ApiConfig.baseUrl fails loudly when API_URL was not defined', () {
       expect(() => ApiConfig.baseUrl, throwsStateError);
     });

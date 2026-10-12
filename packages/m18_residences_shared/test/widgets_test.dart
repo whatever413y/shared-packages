@@ -162,6 +162,12 @@ void main() {
     });
   });
 
+  testWidgets('InfoBanner shows its message', (tester) async {
+    await tester.pumpWidget(app(const Scaffold(body: InfoBanner('Your session has ended. Please log in again.'))));
+    expect(find.text('Your session has ended. Please log in again.'), findsOneWidget);
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+  });
+
   testWidgets('LoadingOverlay reveals the slow-server message after 5 seconds', (tester) async {
     await tester.pumpWidget(app(const Scaffold(body: LoadingOverlay())));
 
