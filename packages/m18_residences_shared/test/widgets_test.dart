@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -731,6 +732,48 @@ void main() {
       expect(find.byType(Dialog), findsNothing);
       expect(find.ancestor(of: find.text('form'), matching: find.byType(SelectionArea)), findsWidgets);
       expect(find.text('Save'), findsOneWidget);
+    });
+  });
+
+  group('pickOrPasteFile', () {
+    testWidgets('choose is the main area; Save stays disabled until a file is in; Close returns null', (tester) async {
+      PickedFile? result = (name: 'x', bytes: Uint8List(0));
+      var done = false;
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  result = await pickOrPasteFile(context, receiptExtensions, title: 'Attach receipt');
+                  done = true;
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.text('Attach receipt'), findsOneWidget);
+      expect(find.text('Choose a file'), findsOneWidget);
+      expect(find.text('Paste'), findsOneWidget);
+      final save = tester.widget<ButtonStyleButton>(find.ancestor(of: find.text('Save'), matching: find.bySubtype<ButtonStyleButton>()));
+      expect(save.onPressed, isNull, reason: 'nothing to save yet');
+
+      // No clipboard and no picker outside a browser: the modal stays open with a message.
+      await tester.tap(find.text('Paste'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Could not read the clipboard'), findsOneWidget);
+      await tester.tap(find.text('Choose a file'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Could not open the file picker'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+      expect(done, isTrue);
+      expect(result, isNull);
     });
   });
 

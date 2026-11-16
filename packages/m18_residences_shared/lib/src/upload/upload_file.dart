@@ -61,3 +61,30 @@ String? sniffReceiptType(Uint8List b) {
   }
   return null;
 }
+
+/// A picked or pasted file: its name (only shown, the type is sniffed) and its bytes.
+typedef PickedFile = ({String name, Uint8List bytes});
+
+/// The extension (one of [extensions]) for a pasted file of MIME type [type], or `null` when it isn't allowed.
+String? pastedFileExtension(String type, List<String> extensions) {
+  final extension = switch (type.toLowerCase()) {
+    'image/jpeg' || 'image/jpg' => 'jpg',
+    'image/png' => 'png',
+    'image/webp' => 'webp',
+    'image/gif' => 'gif',
+    'image/avif' => 'avif',
+    'image/heic' => 'heic',
+    'image/heif' => 'heif',
+    'application/pdf' => 'pdf',
+    _ => null,
+  };
+  return extensions.contains(extension) ? extension : null;
+}
+
+/// The name of a pasted file: its own [name] when it has a real one, else `pasted-<yyyyMMdd-HHmmss>.<extension>`
+/// (clipboard pictures are often just "image.png").
+String pastedFileName(String name, String extension, DateTime now) {
+  if (name.isNotEmpty && name.toLowerCase() != 'image.$extension') return name;
+  String two(int n) => n.toString().padLeft(2, '0');
+  return 'pasted-${now.year}${two(now.month)}${two(now.day)}-${two(now.hour)}${two(now.minute)}${two(now.second)}.$extension';
+}

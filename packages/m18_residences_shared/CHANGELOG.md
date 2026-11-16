@@ -1,3 +1,8 @@
+## 0.11.0
+
+* Paste to attach: `pickOrPasteFile(context, extensions, title:)` opens a small chooser (`showAppModal`) whose main area chooses a file (`pickFile`); a copied picture can be pasted instead with Ctrl+V / ⌘V while it is open, or with its Paste button (reads the clipboard; phones have no Ctrl+V). While attaching, the file shows as a preview (pictures inline, PDF/HEIC as an icon, with name and size): choosing or pasting again changes it, Remove clears it; Save returns it, Close returns `null`. Picker, clipboard and type errors show inside the chooser. Test ids `attach-choose-file` (the area), `attach-paste`, `attach-save`, `attach-remove`, `attach-preview`.
+* `readClipboardFile(extensions)` (Clipboard API) and the helpers `pastedFileExtension` / `pastedFileName` (clipboard pictures without a real name become `pasted-<yyyyMMdd-HHmmss>.<ext>`); `typedef PickedFile = ({String name, Uint8List bytes})`.
+
 ## 0.10.0
 
 * Expired logins: a 401 on any call outside `/auth/` runs the new `ApiClient.onSessionExpired` callback and throws `SessionExpiredException` (an `ApiException`), so the apps can log out and open the login page. Logins and `validateToken` keep their own 401 handling. `AuthApi.client` exposes the shared client.

@@ -22,5 +22,21 @@ void main() {
     await expectLater(prepareReceipt('a.jpg', bytes([0xFF, 0xD8, 0xFF])), throwsUnsupportedError);
     await expectLater(prepareQrPng(Uint8List(0)), throwsUnsupportedError);
     await expectLater(pickFile(receiptExtensions), throwsUnsupportedError);
+    await expectLater(readClipboardFile(receiptExtensions), throwsUnsupportedError);
+  });
+
+  test('pastedFileExtension accepts only the allowed types', () {
+    expect(pastedFileExtension('image/png', receiptExtensions), 'png');
+    expect(pastedFileExtension('IMAGE/JPEG', receiptExtensions), 'jpg');
+    expect(pastedFileExtension('application/pdf', receiptExtensions), 'pdf');
+    expect(pastedFileExtension('application/pdf', ['png', 'jpg']), isNull);
+    expect(pastedFileExtension('text/plain', receiptExtensions), isNull);
+  });
+
+  test('pastedFileName keeps a real name and names clipboard pictures by time', () {
+    final now = DateTime(2026, 11, 6, 9, 5, 3);
+    expect(pastedFileName('gcash receipt.jpg', 'jpg', now), 'gcash receipt.jpg');
+    expect(pastedFileName('image.png', 'png', now), 'pasted-20261106-090503.png');
+    expect(pastedFileName('', 'png', now), 'pasted-20261106-090503.png');
   });
 }
