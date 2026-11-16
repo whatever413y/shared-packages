@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A short notice above a form, e.g. the login page's "Your session has ended. Please log in again.".
 /// Announced to screen readers when it appears.

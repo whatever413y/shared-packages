@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Full-screen spinner; after 5 s it also explains that the (free-tier) server may be waking up.
 class LoadingOverlay extends StatefulWidget {

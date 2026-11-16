@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The close button of modals, toasts and the image viewer: a soft filled circle of [size] with a thin X that
 /// darkens on hover and shows a ring on keyboard focus. The tap target is at least 48 px. [tooltip] is also its

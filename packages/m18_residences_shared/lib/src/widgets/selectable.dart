@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Gives every page its own [SelectionArea] (with the platform's usual transition), so its text can be selected
 /// and copied. One area per route: a single area around the whole Navigator also picks up the text of the hidden

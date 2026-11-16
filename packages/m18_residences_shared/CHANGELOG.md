@@ -1,3 +1,7 @@
+## 0.11.1
+
+* Flutter 3.50: Material widgets come from `package:material_ui/material_ui.dart` (the `material_ui` package by flutter.dev) instead of the deprecated `package:flutter/material.dart`. Apps using this package must import it the same way (one copy of `ThemeData`, `MaterialApp`, …).
+
 ## 0.11.0
 
 * Paste to attach: `pickOrPasteFile(context, extensions, title:)` opens a small chooser (`showAppModal`) whose main area chooses a file (`pickFile`); a copied picture can be pasted instead with Ctrl+V / ⌘V while it is open, or with its Paste button (reads the clipboard; phones have no Ctrl+V). While attaching, the file shows as a preview (pictures inline, PDF/HEIC as an icon, with name and size): choosing or pasting again changes it, Remove clears it; Save returns it, Close returns `null`. Picker, clipboard and type errors show inside the chooser. Test ids `attach-choose-file` (the area), `attach-paste`, `attach-save`, `attach-remove`, `attach-preview`.
