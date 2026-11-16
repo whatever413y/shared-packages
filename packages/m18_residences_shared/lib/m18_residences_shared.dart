@@ -44,6 +44,6 @@ export 'src/widgets/theme_mode.dart';
 export 'src/widgets/toast.dart';
 export 'src/widgets/turnstile.dart';
 export 'src/web/paste_file.dart' show readClipboardFile;
-export 'src/web/pick_file.dart' show pickFile;
-export 'src/web/prepare_upload.dart' show prepareReceipt, prepareQrPng;
+export 'src/web/pick_file.dart' show pickFile, pickFiles;
+export 'src/web/prepare_upload.dart' show prepareReceipt, prepareReceipts, prepareQrPng;
 export 'src/web/save_file.dart' show saveSignedFile;

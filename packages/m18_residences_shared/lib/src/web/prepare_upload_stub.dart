@@ -7,3 +7,6 @@ Future<PreparedReceipt> prepareReceipt(String filename, Uint8List bytes) async =
 
 /// Prepares a payment QR image as PNG. Outside a browser (tests) there is no image decoder.
 Future<Uint8List> prepareQrPng(Uint8List bytes) async => throw UnsupportedError('Preparing a QR image needs a browser');
+
+/// Combines several picked pictures into one upload. Outside a browser (tests) there is no image decoder.
+Future<PreparedReceipt> prepareReceipts(List<PickedFile> files) async => throw UnsupportedError('Preparing pictures needs a browser');

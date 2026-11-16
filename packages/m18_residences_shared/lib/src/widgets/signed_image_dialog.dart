@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../api/api_exception.dart';
@@ -190,22 +192,72 @@ class _SignedImageDialogState extends State<SignedImageDialog> {
         ),
       );
     }
-    final size = MediaQuery.sizeOf(context);
-    // The image on a neutral panel (receipts and QR codes are mostly white); pinch or scroll to zoom.
+    // The image on a neutral panel (receipts and QR codes are mostly white).
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.all(8),
-      child: InteractiveViewer(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: size.width * 0.9, maxHeight: size.height * 0.75),
-          child: Image.network(
-            file.url,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image')),
-          ),
+      child: _SignedImage(url: file.url),
+    );
+  }
+}
+
+/// The image at [url]: fitted into the box (pinch or scroll to zoom), or, when it is much taller than wide (several
+/// pictures combined into one upload), shown at full width and scrolled.
+class _SignedImage extends StatefulWidget {
+  final String url;
+
+  const _SignedImage({required this.url});
+
+  @override
+  State<_SignedImage> createState() => _SignedImageState();
+}
+
+class _SignedImageState extends State<_SignedImage> {
+  late final ImageProvider _image = NetworkImage(widget.url);
+  ImageStream? _stream;
+  late final ImageStreamListener _listener = ImageStreamListener((info, _) {
+    if (mounted) setState(() => _tall = info.image.height > 2 * info.image.width);
+  });
+  bool _tall = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _stream?.removeListener(_listener);
+    _stream = _image.resolve(createLocalImageConfiguration(context))..addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    _stream?.removeListener(_listener);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    Widget image({double? width, BoxFit fit = BoxFit.contain}) => Image(
+      image: _image,
+      width: width,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => const Padding(padding: EdgeInsets.all(20), child: Text('Failed to load image')),
+    );
+    if (_tall) {
+      final width = math.min(size.width * 0.9, 720.0);
+      return SizedBox(
+        width: width,
+        height: size.height * 0.75,
+        child: SingleChildScrollView(
+          child: image(width: width, fit: BoxFit.fitWidth),
         ),
+      );
+    }
+    return InteractiveViewer(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: size.width * 0.9, maxHeight: size.height * 0.75),
+        child: image(),
       ),
     );
   }

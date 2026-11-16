@@ -23,6 +23,44 @@ void main() {
     await expectLater(prepareQrPng(Uint8List(0)), throwsUnsupportedError);
     await expectLater(pickFile(receiptExtensions), throwsUnsupportedError);
     await expectLater(readClipboardFile(receiptExtensions), throwsUnsupportedError);
+    await expectLater(pickFiles(receiptExtensions), throwsUnsupportedError);
+    await expectLater(
+      prepareReceipts([
+        (name: 'a.jpg', bytes: bytes([0xFF, 0xD8, 0xFF])),
+      ]),
+      throwsUnsupportedError,
+    );
+  });
+
+  group('stackLayout', () {
+    test('stacks pictures at the widest width, smaller ones centred and never enlarged', () {
+      final layout = stackLayout([(1200, 800), (600, 400)]);
+      expect(layout.width, 1200);
+      expect(layout.boxes, [(x: 0, y: 0, width: 1200, height: 800), (x: 300, y: 816, width: 600, height: 400)]);
+      expect(layout.height, 1216);
+    });
+
+    test('shrinks pictures wider than the maximum to it', () {
+      final layout = stackLayout([(3200, 1600), (1600, 1600)]);
+      expect(layout.width, 1600);
+      expect(layout.boxes.first, (x: 0, y: 0, width: 1600, height: 800));
+      expect(layout.boxes.last, (x: 0, y: 816, width: 1600, height: 1600));
+    });
+
+    test('scales everything down when the stack would be taller than the maximum', () {
+      final layout = stackLayout([(1000, 9000), (1000, 9000)], maxHeight: 16000);
+      expect(layout.height, lessThanOrEqualTo(16000));
+      expect(layout.width, lessThan(1000));
+      expect(layout.boxes.last.y + layout.boxes.last.height, layout.height);
+    });
+
+    test('nothing to stack', () => expect(stackLayout([]).boxes, isEmpty));
+  });
+
+  test('combinedFileName names the result after the first picture', () {
+    expect(combinedFileName(['gcash.png'], 'webp'), 'gcash.webp');
+    expect(combinedFileName(['gcash.png', 'b.jpg', 'c.heic'], 'webp'), 'gcash-and-2-more.webp');
+    expect(combinedFileName(['noext', 'b.jpg'], 'jpg'), 'noext-and-1-more.jpg');
   });
 
   test('pastedFileExtension accepts only the allowed types', () {

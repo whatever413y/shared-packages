@@ -42,6 +42,45 @@ Future<PreparedReceipt> prepareReceipt(String filename, Uint8List bytes) async {
   return PreparedReceipt(bytes: encoded, filename: '${_baseName(filename)}.$extension', contentType: encodedType, originalSize: bytes.length);
 }
 
+/// Prepares several picked receipt or payment pictures as one upload: a single file goes through [prepareReceipt];
+/// several pictures (no PDF among them) are stacked top to bottom into one image ([stackLayout]) and encoded like a
+/// single picture (WebP, JPEG where the browser can't write WebP).
+Future<PreparedReceipt> prepareReceipts(List<PickedFile> files) async {
+  if (files.isEmpty) throw const ReceiptException('Pick at least one picture');
+  if (files.length == 1) return prepareReceipt(files.first.name, files.first.bytes);
+  if (files.length > maxCombinedPictures) throw const ReceiptException('At most $maxCombinedPictures pictures can be combined');
+
+  final bitmaps = <web.ImageBitmap>[];
+  try {
+    for (final file in files) {
+      final type = sniffReceiptType(file.bytes);
+      if (type == null) throw ReceiptException('Unsupported file: ${file.name}');
+      if (type == 'application/pdf') throw const ReceiptException("A PDF can't be combined with pictures; attach it on its own");
+      bitmaps.add(type == 'image/heic' ? await _decodeHeic(file.bytes) : await _decode(file.bytes, type));
+    }
+    final layout = stackLayout([for (final b in bitmaps) (b.width, b.height)], maxWidth: _maxEdge);
+    final canvas = web.OffscreenCanvas(layout.width, layout.height);
+    final context = canvas.getContext('2d') as web.OffscreenCanvasRenderingContext2D
+      ..fillStyle = 'white'.toJS
+      ..fillRect(0, 0, layout.width, layout.height);
+    for (final (i, box) in layout.boxes.indexed) {
+      context.drawImage(bitmaps[i], box.x, box.y, box.width, box.height);
+    }
+    final (encoded, encodedType) = await _encodeCanvas(canvas, 'image/webp');
+    if (encoded.length > maxReceiptBytes) throw const ReceiptException('The combined picture is larger than 10 MB; use fewer or smaller pictures');
+    return PreparedReceipt(
+      bytes: encoded,
+      filename: combinedFileName([for (final f in files) f.name], encodedType == 'image/webp' ? 'webp' : 'jpg'),
+      contentType: encodedType,
+      originalSize: files.fold(0, (sum, f) => sum + f.bytes.length),
+    );
+  } finally {
+    for (final bitmap in bitmaps) {
+      bitmap.close();
+    }
+  }
+}
+
 /// Payment QR images are shrunk to at most this many pixels on their long edge.
 const _qrMaxEdge = 1024;
 
@@ -101,9 +140,8 @@ Future<void> _loadHeicDecoder() {
   }();
 }
 
-/// Draws [bitmap] at most [maxEdge] px on its long edge and encodes it as [type]; WebP falls back to JPEG
-/// where the browser can't write WebP.
-/// Draws [bitmap] scaled to at most [maxEdge] px on its long edge (on [background] first, when given) and encodes it.
+/// Draws [bitmap] scaled to at most [maxEdge] px on its long edge (on [background] first, when given) and encodes it
+/// ([_encodeCanvas]).
 Future<(Uint8List, String)> _encode(web.ImageBitmap bitmap, {required int maxEdge, required String type, String? background}) async {
   final scale = math.min(1.0, maxEdge / math.max(bitmap.width, bitmap.height));
   final width = math.max(1, (bitmap.width * scale).round());
@@ -116,7 +154,11 @@ Future<(Uint8List, String)> _encode(web.ImageBitmap bitmap, {required int maxEdg
   }
   context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
+  return _encodeCanvas(canvas, type);
+}
 
+/// Encodes [canvas] as [type]; WebP falls back to JPEG where the browser can't write WebP.
+Future<(Uint8List, String)> _encodeCanvas(web.OffscreenCanvas canvas, String type) async {
   var blob = await canvas.convertToBlob(web.ImageEncodeOptions(type: type, quality: _quality)).toDart;
   // Browsers that can't write WebP silently return PNG instead.
   if (type == 'image/webp' && blob.type != 'image/webp') {

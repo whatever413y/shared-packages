@@ -88,3 +88,43 @@ String pastedFileName(String name, String extension, DateTime now) {
   String two(int n) => n.toString().padLeft(2, '0');
   return 'pasted-${now.year}${two(now.month)}${two(now.day)}-${two(now.hour)}${two(now.minute)}${two(now.second)}.$extension';
 }
+
+/// Most pictures one upload can combine ([prepareReceipts]).
+const maxCombinedPictures = 5;
+
+/// Where each of several pictures of [sizes] (width, height) goes when they are stacked top to bottom into one: a
+/// common width (the widest picture, at most [maxWidth]), each picture scaled to fit it (never enlarged) and
+/// centred, [gap] px between them. When the stack would be taller than [maxHeight] (WebP allows 16,383 px),
+/// everything is scaled down to fit.
+({int width, int height, List<({int x, int y, int width, int height})> boxes}) stackLayout(
+  List<(int, int)> sizes, {
+  int maxWidth = 1600,
+  int maxHeight = 16000,
+  int gap = 16,
+}) {
+  if (sizes.isEmpty) return (width: 0, height: 0, boxes: const []);
+  final width = math.min(maxWidth, sizes.map((s) => s.$1).reduce(math.max)).toDouble();
+  final scaled = [for (final (w, h) in sizes) (w * math.min(1.0, width / w), h * math.min(1.0, width / w))];
+  final total = scaled.fold(0.0, (sum, s) => sum + s.$2) + gap * (sizes.length - 1);
+  final k = math.min(1.0, maxHeight / total);
+  final canvasWidth = math.max(1, (width * k).round());
+  final boxes = <({int x, int y, int width, int height})>[];
+  var y = 0.0;
+  for (final (w, h) in scaled) {
+    final boxWidth = math.max(1, (w * k).round());
+    final boxHeight = math.max(1, (h * k).round());
+    boxes.add((x: ((canvasWidth - boxWidth) / 2).round(), y: y.round(), width: boxWidth, height: boxHeight));
+    y += h * k + gap * k;
+  }
+  final last = boxes.last;
+  return (width: canvasWidth, height: math.min(maxHeight, last.y + last.height), boxes: boxes);
+}
+
+/// The name of a picture combined from [names]: `<first name>-and-<n-1>-more.<extension>` (just the first name, with
+/// [extension], for one).
+String combinedFileName(List<String> names, String extension) {
+  final first = names.first;
+  final dot = first.lastIndexOf('.');
+  final base = dot > 0 ? first.substring(0, dot) : first;
+  return names.length == 1 ? '$base.$extension' : '$base-and-${names.length - 1}-more.$extension';
+}

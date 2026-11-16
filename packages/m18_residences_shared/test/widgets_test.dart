@@ -777,6 +777,28 @@ void main() {
     });
   });
 
+  testWidgets('pickOrPasteFiles: asks for several files, nothing to save yet', (tester) async {
+    await tester.pumpWidget(
+      app(
+        Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => pickOrPasteFiles(context, receiptExtensions, title: 'Attach payment'),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose files'), findsOneWidget);
+    expect(find.textContaining('Up to $maxCombinedPictures pictures, combined into one in this order'), findsOneWidget);
+    final save = tester.widget<ButtonStyleButton>(find.ancestor(of: find.text('Save'), matching: find.bySubtype<ButtonStyleButton>()));
+    expect(save.onPressed, isNull);
+    expect(find.text('Remove all'), findsNothing);
+  });
+
   group('AppToast', () {
     Future<BuildContext> pumpHost(WidgetTester tester) async {
       late BuildContext context;

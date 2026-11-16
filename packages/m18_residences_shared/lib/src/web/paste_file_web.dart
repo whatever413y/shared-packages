@@ -5,7 +5,7 @@ import 'package:web/web.dart' as web;
 
 import '../upload/upload_file.dart';
 
-/// Files pasted into the page (Ctrl+V / ⌘V) while listened to: the first pasted file of one of [extensions].
+/// Files pasted into the page (Ctrl+V / ⌘V) while listened to: every pasted file of one of [extensions], in order.
 ///
 /// Only a paste holding such a file is taken (its default action prevented); a text paste goes on into the focused
 /// field as usual. A paste holding only files of other types calls [onRejected] with a message to show.
@@ -14,19 +14,22 @@ Stream<PickedFile> pastedFiles(List<String> extensions, {void Function(String me
   void onPaste(web.Event event) {
     final files = (event as web.ClipboardEvent).clipboardData?.files;
     if (files == null || files.length == 0) return;
+    final now = DateTime.now();
+    final taken = <(web.File, String)>[];
     for (var i = 0; i < files.length; i++) {
       final file = files.item(i)!;
       final extension = pastedFileExtension(file.type, extensions);
-      if (extension == null) continue;
-      event.preventDefault();
-      final name = pastedFileName(file.name, extension, DateTime.now());
-      file.arrayBuffer().toDart.then(
-        (buffer) => controller.add((name: name, bytes: buffer.toDart.asUint8List())),
-        onError: (Object error) => controller.addError(error),
-      );
-      return;
+      if (extension != null) taken.add((file, extension));
     }
-    onRejected?.call("That file type isn't supported");
+    if (taken.isEmpty) return onRejected?.call("That file type isn't supported");
+    event.preventDefault();
+    // In paste order, even if a later file is read first.
+    Future.wait(
+      taken.map((entry) async {
+        final (file, extension) = entry;
+        return (name: pastedFileName(file.name, extension, now), bytes: (await file.arrayBuffer().toDart).toDart.asUint8List());
+      }),
+    ).then((read) => read.forEach(controller.add), onError: (Object error) => controller.addError(error));
   }
 
   final listener = onPaste.toJS;

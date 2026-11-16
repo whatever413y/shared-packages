@@ -1,3 +1,8 @@
+## 0.12.0
+
+* Several pictures in one upload: `pickOrPasteFiles(context, extensions, title:, maxFiles: 5)` gathers up to five pictures (several picked at once with the new `pickFiles`, or chosen and pasted one after another; one paste can carry several). They show as numbered thumbnails that can be moved earlier/later and removed; a PDF can only be attached on its own. `prepareReceipts(files)` stacks them top to bottom into one image (common width ≤ 1600 px, never enlarged, at most 16,000 px tall, WebP; one file goes through `prepareReceipt` as before), named `<first>-and-<n>-more.webp`. Helpers `stackLayout`, `combinedFileName`, `maxCombinedPictures`. Test ids `attach-thumb-<n>`, `attach-remove-<n>`, `attach-add`.
+* `SignedImageDialog` shows an image much taller than wide (a combined upload) at full width, scrolled, instead of shrunk into the box.
+
 ## 0.11.1
 
 * Flutter 3.50: Material widgets come from `package:material_ui/material_ui.dart` (the `material_ui` package by flutter.dev) instead of the deprecated `package:flutter/material.dart`. Apps using this package must import it the same way (one copy of `ThemeData`, `MaterialApp`, …).
